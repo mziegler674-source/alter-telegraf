@@ -1,0 +1,64 @@
+// use prisma-next
+
+model Restaurant {
+  id        Int    @id @default(autoincrement())
+  name      String
+  slug      String @unique
+  createdAt DateTime @default(now())
+
+  users        User[]
+  dailyMenus   DailyMenu[]
+  menuTemplates MenuTemplate[]
+}
+
+model User {
+  id           Int    @id @default(autoincrement())
+  email        String @unique
+  passwordHash String
+  role         String @default("employee")
+
+  restaurantId Int
+  restaurant   Restaurant @relation(
+    fields: [restaurantId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  createdAt DateTime @default(now())
+}
+
+model DailyMenu {
+  id           Int    @id @default(autoincrement())
+  weekday      Int
+  dish         String
+  description  String?
+  price        String
+  visible      Boolean @default(true)
+
+  restaurantId Int
+  restaurant   Restaurant @relation(
+    fields: [restaurantId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  createdAt DateTime @default(now())
+
+  @@unique([restaurantId, weekday])
+}
+
+model MenuTemplate {
+  id           Int    @id @default(autoincrement())
+  dish         String
+  description  String?
+  price        String
+
+  restaurantId Int
+  restaurant   Restaurant @relation(
+    fields: [restaurantId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  createdAt DateTime @default(now())
+}
