@@ -92,3 +92,504 @@ model Reservation {
   @@index([restaurantId, reservationDate])
   @@index([restaurantId, status])
 }
+
+// =====================================================================
+// HOTEL-DOMÄNE
+// Eigenes Postgres-Schema `hotel`. Die Restaurant-Modelle oben stehen
+// ausserhalb jedes namespace-Blocks und bleiben damit in `public`.
+// =====================================================================
+
+enum booking_status {
+  @@type("pg/text@1")
+  INQUIRY     = "INQUIRY"
+  PENDING     = "PENDING"
+  CONFIRMED   = "CONFIRMED"
+  CHECKED_IN  = "CHECKED_IN"
+  CHECKED_OUT = "CHECKED_OUT"
+  CANCELLED   = "CANCELLED"
+  NO_SHOW     = "NO_SHOW"
+}
+
+enum booking_source {
+  @@type("pg/text@1")
+  WEBSITE     = "WEBSITE"
+  PHONE       = "PHONE"
+  EMAIL       = "EMAIL"
+  WALK_IN     = "WALK_IN"
+  MANUAL      = "MANUAL"
+  BOOKING_COM = "BOOKING_COM"
+  EXPEDIA     = "EXPEDIA"
+  AIRBNB      = "AIRBNB"
+  OTHER       = "OTHER"
+}
+
+enum pricing_mode {
+  @@type("pg/text@1")
+  PER_ROOM   = "PER_ROOM"
+  PER_PERSON = "PER_PERSON"
+}
+
+enum meal_plan {
+  @@type("pg/text@1")
+  ROOM_ONLY  = "ROOM_ONLY"
+  BREAKFAST  = "BREAKFAST"
+  HALF_BOARD = "HALF_BOARD"
+  FULL_BOARD = "FULL_BOARD"
+}
+
+enum service_unit {
+  @@type("pg/text@1")
+  PER_STAY         = "PER_STAY"
+  PER_NIGHT        = "PER_NIGHT"
+  PER_DAY          = "PER_DAY"
+  PER_PERSON       = "PER_PERSON"
+  PER_PERSON_NIGHT = "PER_PERSON_NIGHT"
+}
+
+enum room_status {
+  @@type("pg/text@1")
+  CLEAN          = "CLEAN"
+  DIRTY          = "DIRTY"
+  INSPECTED      = "INSPECTED"
+  OUT_OF_SERVICE = "OUT_OF_SERVICE"
+}
+
+enum cancellation_basis {
+  @@type("pg/text@1")
+  PERCENT_OF_TOTAL = "PERCENT_OF_TOTAL"
+  FIRST_NIGHT      = "FIRST_NIGHT"
+  FIXED_AMOUNT     = "FIXED_AMOUNT"
+}
+
+namespace hotel {
+
+  model Hotel {
+    id   Int    @id @default(autoincrement())
+    name String
+    slug String @unique
+
+    legalName   String?
+    vatId       String?
+    street      String
+    postalCode  String
+    city        String
+    countryCode String @default("AT")
+    latitude    Numeric(9, 6)?
+    longitude   Numeric(9, 6)?
+
+    phone String?
+    fax   String?
+    email String?
+
+    timezone String @default("Europe/Vienna")
+    currency String @default("EUR")
+
+    checkInFrom    Time?
+    checkOutUntil  Time?
+    receptionFrom  Time?
+    receptionUntil Time?
+
+    defaultVatRate Numeric(5, 2)?
+
+    createdAt DateTime  @default(now())
+    updatedAt DateTime?
+
+    roomTypes RoomType[]
+    rooms     Room[]
+    amenities Amenity[]
+    ratePlans RatePlan[]
+    bookings  Booking[]
+    services  ServiceItem[]
+    policies  CancellationPolicy[]
+    users     HotelUser[]
+  }
+
+  model HotelUser {
+    id           Int    @id @default(autoincrement())
+    email        String @unique
+    passwordHash String
+    role         String @default("employee")
+
+    hotelId Int
+    hotel   Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+    active    Boolean  @default(true)
+    createdAt DateTime @default(now())
+
+    @@index([hotelId])
+  }
+
+  model RoomType {
+    id      Int   @id @default(autoincrement())
+    hotelId Int
+    hotel   Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+    code             String
+    name             String
+    slug             String
+    description      String?
+    shortDescription String?
+
+    standardOccupancy Int
+    maxOccupancy      Int
+    maxAdults         Int?
+    maxChildren       Int?
+    bedConfiguration  String?
+    sizeSqm           Int?
+
+    pricingMode       pricing_mode @default(PER_ROOM)
+    breakfastIncluded Boolean      @default(true)
+
+    channelCode String?
+    sortOrder   Int      @default(0)
+    active      Boolean  @default(true)
+    createdAt   DateTime @default(now())
+
+    rooms     Room[]
+    amenities RoomTypeAmenity[]
+    images    RoomTypeImage[]
+    prices    RatePrice[]
+    inventory Inventory[]
+    bookedAs  BookingRoom[]
+
+    @@unique([hotelId, code])
+    @@unique([hotelId, slug])
+    @@index([hotelId, active, sortOrder])
+    @@check(expression: "\"maxOccupancy\" >= \"standardOccupancy\" AND \"standardOccupancy\" >= 1", name: "roomType_occupancy_sane")
+  }
+
+  model Room {
+    id      Int   @id @default(autoincrement())
+    hotelId Int
+    hotel   Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+    roomTypeId Int
+    roomType   RoomType @relation(fields: [roomTypeId], references: [id], onDelete: NoAction)
+
+    number    String
+    floor     Int?
+    status    room_status @default(CLEAN)
+    notes     String?
+    active    Boolean     @default(true)
+    createdAt DateTime    @default(now())
+
+    bookingRooms BookingRoom[]
+
+    @@unique([hotelId, number])
+    @@index([roomTypeId, active])
+  }
+
+  model Amenity {
+    id      Int   @id @default(autoincrement())
+    hotelId Int
+    hotel   Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+    code      String
+    name      String
+    icon      String?
+    sortOrder Int    @default(0)
+
+    roomTypes RoomTypeAmenity[]
+
+    @@unique([hotelId, code])
+  }
+
+  model RoomTypeAmenity {
+    id         Int      @id @default(autoincrement())
+    roomTypeId Int
+    roomType   RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+    amenityId  Int
+    amenity    Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+    @@unique([roomTypeId, amenityId])
+    @@index([amenityId])
+  }
+
+  model RoomTypeImage {
+    id         Int      @id @default(autoincrement())
+    roomTypeId Int
+    roomType   RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+
+    url       String
+    alt       String?
+    sortOrder Int     @default(0)
+    isPrimary Boolean @default(false)
+
+    @@index([roomTypeId, sortOrder])
+  }
+
+  model CancellationPolicy {
+    id      Int   @id @default(autoincrement())
+    hotelId Int
+    hotel   Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+    code        String
+    name        String
+    description String?
+    active      Boolean @default(true)
+
+    rules     CancellationRule[]
+    ratePlans RatePlan[]
+
+    @@unique([hotelId, code])
+  }
+
+  model CancellationRule {
+    id       Int                @id @default(autoincrement())
+    policyId Int
+    policy   CancellationPolicy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+    appliesFromDaysBefore Int
+    basis                 cancellation_basis @default(PERCENT_OF_TOTAL)
+    feePercent            Numeric(5, 2)?
+    feeAmount             Numeric(10, 2)?
+
+    @@unique([policyId, appliesFromDaysBefore])
+    @@check(expression: "\"feePercent\" IS NULL OR (\"feePercent\" >= 0 AND \"feePercent\" <= 100)", name: "cancellationRule_percent_range")
+  }
+
+  model RatePlan {
+    id      Int   @id @default(autoincrement())
+    hotelId Int
+    hotel   Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+    code        String
+    name        String
+    description String?
+    mealPlan    meal_plan @default(BREAKFAST)
+
+    minStay            Int?
+    maxStay            Int?
+    advanceBookingDays Int?
+    discountPercent    Numeric(5, 2)?
+
+    cancellationPolicyId Int?
+    cancellationPolicy   CancellationPolicy? @relation(fields: [cancellationPolicyId], references: [id], onDelete: SetNull)
+
+    channelCode String?
+    active      Boolean @default(true)
+    sortOrder   Int     @default(0)
+
+    prices       RatePrice[]
+    bookingRooms BookingRoom[]
+
+    @@unique([hotelId, code])
+    @@index([hotelId, active])
+  }
+
+  model RatePrice {
+    id         Int      @id @default(autoincrement())
+    ratePlanId Int
+    ratePlan   RatePlan @relation(fields: [ratePlanId], references: [id], onDelete: Cascade)
+    roomTypeId Int
+    roomType   RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+
+    date      Date
+    occupancy Int
+    amount    Numeric(10, 2)
+
+    @@unique([ratePlanId, roomTypeId, date, occupancy])
+    @@index([roomTypeId, date])
+    @@check(expression: "\"occupancy\" >= 1", name: "ratePrice_occupancy_positive")
+    @@check(expression: "\"amount\" >= 0", name: "ratePrice_amount_nonneg")
+  }
+
+  model Inventory {
+    id         Int      @id @default(autoincrement())
+    roomTypeId Int
+    roomType   RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+
+    date              Date
+    allotment         Int
+    booked            Int     @default(0)
+    stopSell          Boolean @default(false)
+    minStay           Int?
+    closedToArrival   Boolean @default(false)
+    closedToDeparture Boolean @default(false)
+
+    @@unique([roomTypeId, date])
+    @@index([date])
+    @@check(expression: "\"booked\" >= 0 AND \"booked\" <= \"allotment\"", name: "inventory_booked_within_allotment")
+  }
+
+  model Guest {
+    id        Int     @id @default(autoincrement())
+    firstName String
+    lastName  String
+    email     String?
+    phone     String?
+
+    street      String?
+    postalCode  String?
+    city        String?
+    countryCode String?
+
+    birthDate      Date?
+    nationality    String?
+    idDocumentType String?
+    idDocumentNo   String?
+
+    notes     String?
+    createdAt DateTime @default(now())
+
+    bookings   Booking[]
+    stayGuests BookingRoomGuest[]
+
+    @@index([lastName, firstName])
+    @@index([email])
+  }
+
+  model ServiceItem {
+    id      Int   @id @default(autoincrement())
+    hotelId Int
+    hotel   Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+    code        String
+    name        String
+    description String?
+    price       Numeric(10, 2)
+    unit        service_unit
+    vatRate     Numeric(5, 2)?
+    mandatory   Boolean @default(false)
+    active      Boolean @default(true)
+    sortOrder   Int     @default(0)
+
+    bookingExtras BookingExtra[]
+
+    @@unique([hotelId, code])
+    @@index([hotelId, active])
+  }
+
+  model Booking {
+    id      Int   @id @default(autoincrement())
+    hotelId Int
+    hotel   Hotel @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+
+    bookingNumber String @unique
+
+    guestId Int
+    guest   Guest @relation(fields: [guestId], references: [id], onDelete: Restrict)
+
+    status booking_status @default(INQUIRY)
+    source booking_source @default(WEBSITE)
+
+    externalChannel   String?
+    externalBookingId String?
+
+    checkIn  Date
+    checkOut Date
+    adults   Int  @default(1)
+    children Int  @default(0)
+
+    currency      String          @default("EUR")
+    roomsTotal    Numeric(10, 2)
+    extrasTotal   Numeric(10, 2)
+    totalAmount   Numeric(10, 2)
+    depositDue    Numeric(10, 2)?
+    depositPaidAt DateTime?
+
+    cancellationPolicySnapshot Json?
+    cancelledAt                DateTime?
+    cancellationFee            Numeric(10, 2)?
+
+    guestMessage String?
+    internalNote String?
+    createdAt    DateTime  @default(now())
+    updatedAt    DateTime?
+
+    rooms  BookingRoom[]
+    extras BookingExtra[]
+
+    @@unique([externalChannel, externalBookingId])
+    @@index([hotelId, checkIn])
+    @@index([hotelId, status])
+    @@check(expression: "\"checkOut\" > \"checkIn\"", name: "booking_dates_ordered")
+  }
+
+  model BookingRoom {
+    id        Int     @id @default(autoincrement())
+    bookingId Int
+    booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+    roomTypeId Int
+    roomType   RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
+
+    roomId Int?
+    room   Room? @relation(fields: [roomId], references: [id], onDelete: SetNull)
+
+    ratePlanId Int?
+    ratePlan   RatePlan? @relation(fields: [ratePlanId], references: [id], onDelete: SetNull)
+
+    checkIn  Date
+    checkOut Date
+    adults   Int @default(1)
+    children Int @default(0)
+
+    pricingModeSnapshot pricing_mode
+    totalAmount         Numeric(10, 2)
+
+    guestName String?
+    note      String?
+
+    nights BookingRoomNight[]
+    guests BookingRoomGuest[]
+    extras BookingExtra[]
+
+    @@index([bookingId])
+    @@index([roomTypeId, checkIn, checkOut])
+    @@index([roomId, checkIn])
+    @@check(expression: "\"checkOut\" > \"checkIn\"", name: "bookingRoom_dates_ordered")
+  }
+
+  model BookingRoomNight {
+    id            Int         @id @default(autoincrement())
+    bookingRoomId Int
+    bookingRoom   BookingRoom @relation(fields: [bookingRoomId], references: [id], onDelete: Cascade)
+
+    date              Date
+    amount            Numeric(10, 2)
+    occupancySnapshot Int
+
+    @@unique([bookingRoomId, date])
+    @@index([date])
+    @@check(expression: "\"amount\" >= 0", name: "bookingRoomNight_amount_nonneg")
+  }
+
+  model BookingRoomGuest {
+    id            Int         @id @default(autoincrement())
+    bookingRoomId Int
+    bookingRoom   BookingRoom @relation(fields: [bookingRoomId], references: [id], onDelete: Cascade)
+
+    guestId Int
+    guest   Guest @relation(fields: [guestId], references: [id], onDelete: Restrict)
+
+    isPrimary    Boolean   @default(false)
+    isChild      Boolean   @default(false)
+    registeredAt DateTime?
+
+    @@unique([bookingRoomId, guestId])
+    @@index([guestId])
+  }
+
+  model BookingExtra {
+    id        Int     @id @default(autoincrement())
+    bookingId Int
+    booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+    bookingRoomId Int?
+    bookingRoom   BookingRoom? @relation(fields: [bookingRoomId], references: [id], onDelete: Cascade)
+
+    serviceItemId Int
+    serviceItem   ServiceItem @relation(fields: [serviceItemId], references: [id], onDelete: Restrict)
+
+    quantity     Int            @default(1)
+    unitPrice    Numeric(10, 2)
+    unitSnapshot service_unit
+    totalAmount  Numeric(10, 2)
+
+    @@index([bookingId])
+    @@index([serviceItemId])
+    @@check(expression: "\"quantity\" >= 1", name: "bookingExtra_quantity_positive")
+  }
+
+}

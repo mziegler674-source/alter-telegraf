@@ -1,0 +1,742 @@
+[
+  {
+    "id": "schema.public",
+    "label": "Create schema \"public\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create schema \"public\"",
+        "sql": "CREATE SCHEMA IF NOT EXISTS \"public\"",
+        "params": []
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "table.dailyMenu",
+    "label": "Create table \"dailyMenu\"",
+    "summary": "Creates table \"dailyMenu\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "dailyMenu"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"dailyMenu\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"dailyMenu\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"dailyMenu\"",
+        "sql": "CREATE TABLE \"public\".\"dailyMenu\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"description\" text,\n  \"dish\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"price\" text NOT NULL,\n  \"restaurantId\" int4 NOT NULL,\n  \"visible\" bool DEFAULT true NOT NULL,\n  \"weekday\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"dailyMenu\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"dailyMenu\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.menuTemplate",
+    "label": "Create table \"menuTemplate\"",
+    "summary": "Creates table \"menuTemplate\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "menuTemplate"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"menuTemplate\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"menuTemplate\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"menuTemplate\"",
+        "sql": "CREATE TABLE \"public\".\"menuTemplate\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"description\" text,\n  \"dish\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"price\" text NOT NULL,\n  \"restaurantId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"menuTemplate\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"menuTemplate\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.reservation",
+    "label": "Create table \"reservation\"",
+    "summary": "Creates table \"reservation\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "reservation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"reservation\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"reservation\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"reservation\"",
+        "sql": "CREATE TABLE \"public\".\"reservation\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"email\" text NOT NULL,\n  \"firstName\" text NOT NULL,\n  \"guests\" int4 NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"lastName\" text NOT NULL,\n  \"message\" text,\n  \"phone\" text NOT NULL,\n  \"reservationDate\" timestamptz NOT NULL,\n  \"reservationTime\" text NOT NULL,\n  \"restaurantId\" int4 NOT NULL,\n  \"status\" text DEFAULT 'NEW' NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"reservation\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"reservation\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.restaurant",
+    "label": "Create table \"restaurant\"",
+    "summary": "Creates table \"restaurant\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "restaurant"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"restaurant\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"restaurant\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"restaurant\"",
+        "sql": "CREATE TABLE \"public\".\"restaurant\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"name\" text NOT NULL,\n  \"slug\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"restaurant\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"restaurant\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.user",
+    "label": "Create table \"user\"",
+    "summary": "Creates table \"user\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "user"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"user\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"user\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"user\"",
+        "sql": "CREATE TABLE \"public\".\"user\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"email\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"passwordHash\" text NOT NULL,\n  \"restaurantId\" int4 NOT NULL,\n  \"role\" text DEFAULT 'employee' NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"user\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"user\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.dailyMenu.dailyMenu_restaurantId_weekday_key",
+    "label": "Add unique constraint on \"dailyMenu\" (restaurantId, weekday)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "dailyMenu_restaurantId_weekday_key",
+        "table": "dailyMenu"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"dailyMenu_restaurantId_weekday_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "dailyMenu_restaurantId_weekday_key",
+          "public",
+          "\"public\".\"dailyMenu\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"dailyMenu_restaurantId_weekday_key\"",
+        "sql": "ALTER TABLE \"public\".\"dailyMenu\" ADD CONSTRAINT \"dailyMenu_restaurantId_weekday_key\" UNIQUE (\"restaurantId\", \"weekday\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"dailyMenu_restaurantId_weekday_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "dailyMenu_restaurantId_weekday_key",
+          "public",
+          "\"public\".\"dailyMenu\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.restaurant.restaurant_slug_key",
+    "label": "Add unique constraint on \"restaurant\" (slug)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "restaurant_slug_key",
+        "table": "restaurant"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"restaurant_slug_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "restaurant_slug_key",
+          "public",
+          "\"public\".\"restaurant\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"restaurant_slug_key\"",
+        "sql": "ALTER TABLE \"public\".\"restaurant\" ADD CONSTRAINT \"restaurant_slug_key\" UNIQUE (\"slug\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"restaurant_slug_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "restaurant_slug_key",
+          "public",
+          "\"public\".\"restaurant\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.user.user_email_key",
+    "label": "Add unique constraint on \"user\" (email)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "user_email_key",
+        "table": "user"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"user_email_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "user_email_key",
+          "public",
+          "\"public\".\"user\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"user_email_key\"",
+        "sql": "ALTER TABLE \"public\".\"user\" ADD CONSTRAINT \"user_email_key\" UNIQUE (\"email\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"user_email_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "user_email_key",
+          "public",
+          "\"public\".\"user\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.dailyMenu.dailyMenu_restaurantId_idx_cf3ee7d0",
+    "label": "Create index \"dailyMenu_restaurantId_idx_cf3ee7d0\" on \"dailyMenu\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "dailyMenu_restaurantId_idx_cf3ee7d0",
+        "table": "dailyMenu"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"dailyMenu_restaurantId_idx_cf3ee7d0\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"dailyMenu_restaurantId_idx_cf3ee7d0\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"dailyMenu_restaurantId_idx_cf3ee7d0\"",
+        "sql": "CREATE INDEX \"dailyMenu_restaurantId_idx_cf3ee7d0\" ON \"public\".\"dailyMenu\" (\"restaurantId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"dailyMenu_restaurantId_idx_cf3ee7d0\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"dailyMenu_restaurantId_idx_cf3ee7d0\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.menuTemplate.menuTemplate_restaurantId_idx_cf3ee7d0",
+    "label": "Create index \"menuTemplate_restaurantId_idx_cf3ee7d0\" on \"menuTemplate\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "menuTemplate_restaurantId_idx_cf3ee7d0",
+        "table": "menuTemplate"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"menuTemplate_restaurantId_idx_cf3ee7d0\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"menuTemplate_restaurantId_idx_cf3ee7d0\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"menuTemplate_restaurantId_idx_cf3ee7d0\"",
+        "sql": "CREATE INDEX \"menuTemplate_restaurantId_idx_cf3ee7d0\" ON \"public\".\"menuTemplate\" (\"restaurantId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"menuTemplate_restaurantId_idx_cf3ee7d0\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"menuTemplate_restaurantId_idx_cf3ee7d0\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.reservation.reservation_restaurantId_idx_cf3ee7d0",
+    "label": "Create index \"reservation_restaurantId_idx_cf3ee7d0\" on \"reservation\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "reservation_restaurantId_idx_cf3ee7d0",
+        "table": "reservation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"reservation_restaurantId_idx_cf3ee7d0\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"reservation_restaurantId_idx_cf3ee7d0\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"reservation_restaurantId_idx_cf3ee7d0\"",
+        "sql": "CREATE INDEX \"reservation_restaurantId_idx_cf3ee7d0\" ON \"public\".\"reservation\" (\"restaurantId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"reservation_restaurantId_idx_cf3ee7d0\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"reservation_restaurantId_idx_cf3ee7d0\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.reservation.reservation_restaurantId_reservationDate_idx_da900b66",
+    "label": "Create index \"reservation_restaurantId_reservationDate_idx_da900b66\" on \"reservation\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "reservation_restaurantId_reservationDate_idx_da900b66",
+        "table": "reservation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"reservation_restaurantId_reservationDate_idx_da900b66\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"reservation_restaurantId_reservationDate_idx_da900b66\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"reservation_restaurantId_reservationDate_idx_da900b66\"",
+        "sql": "CREATE INDEX \"reservation_restaurantId_reservationDate_idx_da900b66\" ON \"public\".\"reservation\" (\"restaurantId\", \"reservationDate\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"reservation_restaurantId_reservationDate_idx_da900b66\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"reservation_restaurantId_reservationDate_idx_da900b66\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.reservation.reservation_restaurantId_status_idx_a6df7642",
+    "label": "Create index \"reservation_restaurantId_status_idx_a6df7642\" on \"reservation\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "reservation_restaurantId_status_idx_a6df7642",
+        "table": "reservation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"reservation_restaurantId_status_idx_a6df7642\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"reservation_restaurantId_status_idx_a6df7642\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"reservation_restaurantId_status_idx_a6df7642\"",
+        "sql": "CREATE INDEX \"reservation_restaurantId_status_idx_a6df7642\" ON \"public\".\"reservation\" (\"restaurantId\", \"status\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"reservation_restaurantId_status_idx_a6df7642\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"reservation_restaurantId_status_idx_a6df7642\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.user.user_restaurantId_idx_cf3ee7d0",
+    "label": "Create index \"user_restaurantId_idx_cf3ee7d0\" on \"user\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "user_restaurantId_idx_cf3ee7d0",
+        "table": "user"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"user_restaurantId_idx_cf3ee7d0\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"user_restaurantId_idx_cf3ee7d0\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"user_restaurantId_idx_cf3ee7d0\"",
+        "sql": "CREATE INDEX \"user_restaurantId_idx_cf3ee7d0\" ON \"public\".\"user\" (\"restaurantId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"user_restaurantId_idx_cf3ee7d0\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"user_restaurantId_idx_cf3ee7d0\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.dailyMenu.dailyMenu_restaurantId_fkey",
+    "label": "Add foreign key \"dailyMenu_restaurantId_fkey\" on \"dailyMenu\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "dailyMenu_restaurantId_fkey",
+        "table": "dailyMenu"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"dailyMenu_restaurantId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "dailyMenu_restaurantId_fkey",
+          "public",
+          "\"public\".\"dailyMenu\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"dailyMenu_restaurantId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"dailyMenu\"\nADD CONSTRAINT \"dailyMenu_restaurantId_fkey\"\nFOREIGN KEY (\"restaurantId\")\nREFERENCES \"public\".\"restaurant\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"dailyMenu_restaurantId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "dailyMenu_restaurantId_fkey",
+          "public",
+          "\"public\".\"dailyMenu\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.menuTemplate.menuTemplate_restaurantId_fkey",
+    "label": "Add foreign key \"menuTemplate_restaurantId_fkey\" on \"menuTemplate\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "menuTemplate_restaurantId_fkey",
+        "table": "menuTemplate"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"menuTemplate_restaurantId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "menuTemplate_restaurantId_fkey",
+          "public",
+          "\"public\".\"menuTemplate\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"menuTemplate_restaurantId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"menuTemplate\"\nADD CONSTRAINT \"menuTemplate_restaurantId_fkey\"\nFOREIGN KEY (\"restaurantId\")\nREFERENCES \"public\".\"restaurant\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"menuTemplate_restaurantId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "menuTemplate_restaurantId_fkey",
+          "public",
+          "\"public\".\"menuTemplate\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.reservation.reservation_restaurantId_fkey",
+    "label": "Add foreign key \"reservation_restaurantId_fkey\" on \"reservation\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "reservation_restaurantId_fkey",
+        "table": "reservation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"reservation_restaurantId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "reservation_restaurantId_fkey",
+          "public",
+          "\"public\".\"reservation\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"reservation_restaurantId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"reservation\"\nADD CONSTRAINT \"reservation_restaurantId_fkey\"\nFOREIGN KEY (\"restaurantId\")\nREFERENCES \"public\".\"restaurant\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"reservation_restaurantId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "reservation_restaurantId_fkey",
+          "public",
+          "\"public\".\"reservation\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.user.user_restaurantId_fkey",
+    "label": "Add foreign key \"user_restaurantId_fkey\" on \"user\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "user_restaurantId_fkey",
+        "table": "user"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"user_restaurantId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "user_restaurantId_fkey",
+          "public",
+          "\"public\".\"user\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"user_restaurantId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"user\"\nADD CONSTRAINT \"user_restaurantId_fkey\"\nFOREIGN KEY (\"restaurantId\")\nREFERENCES \"public\".\"restaurant\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"user_restaurantId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "user_restaurantId_fkey",
+          "public",
+          "\"public\".\"user\""
+        ]
+      }
+    ]
+  }
+]

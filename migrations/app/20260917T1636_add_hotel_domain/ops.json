@@ -1,0 +1,4288 @@
+[
+  {
+    "id": "schema.hotel",
+    "label": "Create schema \"hotel\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create schema \"hotel\"",
+        "sql": "CREATE SCHEMA IF NOT EXISTS \"hotel\"",
+        "params": []
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "table.amenity",
+    "label": "Create table \"amenity\"",
+    "summary": "Creates table \"amenity\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "table",
+        "name": "amenity"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"amenity\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"amenity\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"amenity\"",
+        "sql": "CREATE TABLE \"hotel\".\"amenity\" (\n  \"code\" text NOT NULL,\n  \"hotelId\" int4 NOT NULL,\n  \"icon\" text,\n  \"id\" SERIAL NOT NULL,\n  \"name\" text NOT NULL,\n  \"sortOrder\" int4 DEFAULT 0 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"amenity\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"amenity\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.booking",
+    "label": "Create table \"booking\"",
+    "summary": "Creates table \"booking\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "table",
+        "name": "booking"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"booking\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"booking\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"booking\"",
+        "sql": "CREATE TABLE \"hotel\".\"booking\" (\n  \"adults\" int4 DEFAULT 1 NOT NULL,\n  \"bookingNumber\" text NOT NULL,\n  \"cancellationFee\" numeric(10,2),\n  \"cancellationPolicySnapshot\" json,\n  \"cancelledAt\" timestamptz,\n  \"checkIn\" date NOT NULL,\n  \"checkOut\" date NOT NULL,\n  \"children\" int4 DEFAULT 0 NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"currency\" text DEFAULT 'EUR' NOT NULL,\n  \"depositDue\" numeric(10,2),\n  \"depositPaidAt\" timestamptz,\n  \"externalBookingId\" text,\n  \"externalChannel\" text,\n  \"extrasTotal\" numeric(10,2) NOT NULL,\n  \"guestId\" int4 NOT NULL,\n  \"guestMessage\" text,\n  \"hotelId\" int4 NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"internalNote\" text,\n  \"roomsTotal\" numeric(10,2) NOT NULL,\n  \"source\" text DEFAULT 'WEBSITE' NOT NULL,\n  \"status\" text DEFAULT 'INQUIRY' NOT NULL,\n  \"totalAmount\" numeric(10,2) NOT NULL,\n  \"updatedAt\" timestamptz,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"booking_dates_ordered_895ca4da\" CHECK (\"checkOut\" > \"checkIn\"),\n  CONSTRAINT \"booking_source_check_0cd4d5fd\" CHECK (\"source\" IN ('WEBSITE', 'PHONE', 'EMAIL', 'WALK_IN', 'MANUAL', 'BOOKING_COM', 'EXPEDIA', 'AIRBNB', 'OTHER')),\n  CONSTRAINT \"booking_status_check_8281edf7\" CHECK (\"status\" IN ('INQUIRY', 'PENDING', 'CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'CANCELLED', 'NO_SHOW'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"booking\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"booking\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.bookingExtra",
+    "label": "Create table \"bookingExtra\"",
+    "summary": "Creates table \"bookingExtra\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "table",
+        "name": "bookingExtra"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"bookingExtra\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingExtra\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"bookingExtra\"",
+        "sql": "CREATE TABLE \"hotel\".\"bookingExtra\" (\n  \"bookingId\" int4 NOT NULL,\n  \"bookingRoomId\" int4,\n  \"id\" SERIAL NOT NULL,\n  \"quantity\" int4 DEFAULT 1 NOT NULL,\n  \"serviceItemId\" int4 NOT NULL,\n  \"totalAmount\" numeric(10,2) NOT NULL,\n  \"unitPrice\" numeric(10,2) NOT NULL,\n  \"unitSnapshot\" text NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"bookingExtra_quantity_positive_4c388344\" CHECK (\"quantity\" >= 1),\n  CONSTRAINT \"bookingExtra_unitSnapshot_check_0f625b6f\" CHECK (\"unitSnapshot\" IN ('PER_STAY', 'PER_NIGHT', 'PER_DAY', 'PER_PERSON', 'PER_PERSON_NIGHT'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"bookingExtra\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingExtra\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.bookingRoom",
+    "label": "Create table \"bookingRoom\"",
+    "summary": "Creates table \"bookingRoom\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "table",
+        "name": "bookingRoom"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"bookingRoom\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoom\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"bookingRoom\"",
+        "sql": "CREATE TABLE \"hotel\".\"bookingRoom\" (\n  \"adults\" int4 DEFAULT 1 NOT NULL,\n  \"bookingId\" int4 NOT NULL,\n  \"checkIn\" date NOT NULL,\n  \"checkOut\" date NOT NULL,\n  \"children\" int4 DEFAULT 0 NOT NULL,\n  \"guestName\" text,\n  \"id\" SERIAL NOT NULL,\n  \"note\" text,\n  \"pricingModeSnapshot\" text NOT NULL,\n  \"ratePlanId\" int4,\n  \"roomId\" int4,\n  \"roomTypeId\" int4 NOT NULL,\n  \"totalAmount\" numeric(10,2) NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"bookingRoom_dates_ordered_895ca4da\" CHECK (\"checkOut\" > \"checkIn\"),\n  CONSTRAINT \"bookingRoom_pricingModeSnapshot_check_114bbb7c\" CHECK (\"pricingModeSnapshot\" IN ('PER_ROOM', 'PER_PERSON'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"bookingRoom\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoom\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.bookingRoomGuest",
+    "label": "Create table \"bookingRoomGuest\"",
+    "summary": "Creates table \"bookingRoomGuest\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "table",
+        "name": "bookingRoomGuest"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"bookingRoomGuest\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoomGuest\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"bookingRoomGuest\"",
+        "sql": "CREATE TABLE \"hotel\".\"bookingRoomGuest\" (\n  \"bookingRoomId\" int4 NOT NULL,\n  \"guestId\" int4 NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"isChild\" bool DEFAULT false NOT NULL,\n  \"isPrimary\" bool DEFAULT false NOT NULL,\n  \"registeredAt\" timestamptz,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"bookingRoomGuest\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoomGuest\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.bookingRoomNight",
+    "label": "Create table \"bookingRoomNight\"",
+    "summary": "Creates table \"bookingRoomNight\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "table",
+        "name": "bookingRoomNight"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"bookingRoomNight\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoomNight\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"bookingRoomNight\"",
+        "sql": "CREATE TABLE \"hotel\".\"bookingRoomNight\" (\n  \"amount\" numeric(10,2) NOT NULL,\n  \"bookingRoomId\" int4 NOT NULL,\n  \"date\" date NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"occupancySnapshot\" int4 NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"bookingRoomNight_amount_nonneg_b0224f56\" CHECK (\"amount\" >= 0)\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"bookingRoomNight\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoomNight\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.cancellationPolicy",
+    "label": "Create table \"cancellationPolicy\"",
+    "summary": "Creates table \"cancellationPolicy\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "table",
+        "name": "cancellationPolicy"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"cancellationPolicy\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"cancellationPolicy\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"cancellationPolicy\"",
+        "sql": "CREATE TABLE \"hotel\".\"cancellationPolicy\" (\n  \"active\" bool DEFAULT true NOT NULL,\n  \"code\" text NOT NULL,\n  \"description\" text,\n  \"hotelId\" int4 NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"name\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"cancellationPolicy\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"cancellationPolicy\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.cancellationRule",
+    "label": "Create table \"cancellationRule\"",
+    "summary": "Creates table \"cancellationRule\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "table",
+        "name": "cancellationRule"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"cancellationRule\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"cancellationRule\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"cancellationRule\"",
+        "sql": "CREATE TABLE \"hotel\".\"cancellationRule\" (\n  \"appliesFromDaysBefore\" int4 NOT NULL,\n  \"basis\" text DEFAULT 'PERCENT_OF_TOTAL' NOT NULL,\n  \"feeAmount\" numeric(10,2),\n  \"feePercent\" numeric(5,2),\n  \"id\" SERIAL NOT NULL,\n  \"policyId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"cancellationRule_basis_check_87bb958e\" CHECK (\"basis\" IN ('PERCENT_OF_TOTAL', 'FIRST_NIGHT', 'FIXED_AMOUNT')),\n  CONSTRAINT \"cancellationRule_percent_range_3f55e59c\" CHECK (\"feePercent\" IS NULL OR (\"feePercent\" >= 0 AND \"feePercent\" <= 100))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"cancellationRule\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"cancellationRule\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.guest",
+    "label": "Create table \"guest\"",
+    "summary": "Creates table \"guest\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "table",
+        "name": "guest"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"guest\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"guest\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"guest\"",
+        "sql": "CREATE TABLE \"hotel\".\"guest\" (\n  \"birthDate\" date,\n  \"city\" text,\n  \"countryCode\" text,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"email\" text,\n  \"firstName\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"idDocumentNo\" text,\n  \"idDocumentType\" text,\n  \"lastName\" text NOT NULL,\n  \"nationality\" text,\n  \"notes\" text,\n  \"phone\" text,\n  \"postalCode\" text,\n  \"street\" text,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"guest\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"guest\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.hotel",
+    "label": "Create table \"hotel\"",
+    "summary": "Creates table \"hotel\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "table",
+        "name": "hotel"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"hotel\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"hotel\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"hotel\"",
+        "sql": "CREATE TABLE \"hotel\".\"hotel\" (\n  \"checkInFrom\" time,\n  \"checkOutUntil\" time,\n  \"city\" text NOT NULL,\n  \"countryCode\" text DEFAULT 'AT' NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"currency\" text DEFAULT 'EUR' NOT NULL,\n  \"defaultVatRate\" numeric(5,2),\n  \"email\" text,\n  \"fax\" text,\n  \"id\" SERIAL NOT NULL,\n  \"latitude\" numeric(9,6),\n  \"legalName\" text,\n  \"longitude\" numeric(9,6),\n  \"name\" text NOT NULL,\n  \"phone\" text,\n  \"postalCode\" text NOT NULL,\n  \"receptionFrom\" time,\n  \"receptionUntil\" time,\n  \"slug\" text NOT NULL,\n  \"street\" text NOT NULL,\n  \"timezone\" text DEFAULT 'Europe/Vienna' NOT NULL,\n  \"updatedAt\" timestamptz,\n  \"vatId\" text,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"hotel\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"hotel\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.hotelUser",
+    "label": "Create table \"hotelUser\"",
+    "summary": "Creates table \"hotelUser\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "table",
+        "name": "hotelUser"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"hotelUser\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"hotelUser\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"hotelUser\"",
+        "sql": "CREATE TABLE \"hotel\".\"hotelUser\" (\n  \"active\" bool DEFAULT true NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"email\" text NOT NULL,\n  \"hotelId\" int4 NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"passwordHash\" text NOT NULL,\n  \"role\" text DEFAULT 'employee' NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"hotelUser\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"hotelUser\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.inventory",
+    "label": "Create table \"inventory\"",
+    "summary": "Creates table \"inventory\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "table",
+        "name": "inventory"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"inventory\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"inventory\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"inventory\"",
+        "sql": "CREATE TABLE \"hotel\".\"inventory\" (\n  \"allotment\" int4 NOT NULL,\n  \"booked\" int4 DEFAULT 0 NOT NULL,\n  \"closedToArrival\" bool DEFAULT false NOT NULL,\n  \"closedToDeparture\" bool DEFAULT false NOT NULL,\n  \"date\" date NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"minStay\" int4,\n  \"roomTypeId\" int4 NOT NULL,\n  \"stopSell\" bool DEFAULT false NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"inventory_booked_within_allotment_20d5e4c4\" CHECK (\"booked\" >= 0 AND \"booked\" <= \"allotment\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"inventory\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"inventory\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.ratePlan",
+    "label": "Create table \"ratePlan\"",
+    "summary": "Creates table \"ratePlan\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "table",
+        "name": "ratePlan"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"ratePlan\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"ratePlan\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"ratePlan\"",
+        "sql": "CREATE TABLE \"hotel\".\"ratePlan\" (\n  \"active\" bool DEFAULT true NOT NULL,\n  \"advanceBookingDays\" int4,\n  \"cancellationPolicyId\" int4,\n  \"channelCode\" text,\n  \"code\" text NOT NULL,\n  \"description\" text,\n  \"discountPercent\" numeric(5,2),\n  \"hotelId\" int4 NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"maxStay\" int4,\n  \"mealPlan\" text DEFAULT 'BREAKFAST' NOT NULL,\n  \"minStay\" int4,\n  \"name\" text NOT NULL,\n  \"sortOrder\" int4 DEFAULT 0 NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"ratePlan_mealPlan_check_280a1e27\" CHECK (\"mealPlan\" IN ('ROOM_ONLY', 'BREAKFAST', 'HALF_BOARD', 'FULL_BOARD'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"ratePlan\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"ratePlan\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.ratePrice",
+    "label": "Create table \"ratePrice\"",
+    "summary": "Creates table \"ratePrice\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "table",
+        "name": "ratePrice"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"ratePrice\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"ratePrice\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"ratePrice\"",
+        "sql": "CREATE TABLE \"hotel\".\"ratePrice\" (\n  \"amount\" numeric(10,2) NOT NULL,\n  \"date\" date NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"occupancy\" int4 NOT NULL,\n  \"ratePlanId\" int4 NOT NULL,\n  \"roomTypeId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"ratePrice_amount_nonneg_b0224f56\" CHECK (\"amount\" >= 0),\n  CONSTRAINT \"ratePrice_occupancy_positive_1dbe677e\" CHECK (\"occupancy\" >= 1)\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"ratePrice\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"ratePrice\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.room",
+    "label": "Create table \"room\"",
+    "summary": "Creates table \"room\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "table",
+        "name": "room"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"room\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"room\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"room\"",
+        "sql": "CREATE TABLE \"hotel\".\"room\" (\n  \"active\" bool DEFAULT true NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"floor\" int4,\n  \"hotelId\" int4 NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"notes\" text,\n  \"number\" text NOT NULL,\n  \"roomTypeId\" int4 NOT NULL,\n  \"status\" text DEFAULT 'CLEAN' NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"room_status_check_b5dad1ea\" CHECK (\"status\" IN ('CLEAN', 'DIRTY', 'INSPECTED', 'OUT_OF_SERVICE'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"room\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"room\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.roomType",
+    "label": "Create table \"roomType\"",
+    "summary": "Creates table \"roomType\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "table",
+        "name": "roomType"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"roomType\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"roomType\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"roomType\"",
+        "sql": "CREATE TABLE \"hotel\".\"roomType\" (\n  \"active\" bool DEFAULT true NOT NULL,\n  \"bedConfiguration\" text,\n  \"breakfastIncluded\" bool DEFAULT true NOT NULL,\n  \"channelCode\" text,\n  \"code\" text NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"description\" text,\n  \"hotelId\" int4 NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"maxAdults\" int4,\n  \"maxChildren\" int4,\n  \"maxOccupancy\" int4 NOT NULL,\n  \"name\" text NOT NULL,\n  \"pricingMode\" text DEFAULT 'PER_ROOM' NOT NULL,\n  \"shortDescription\" text,\n  \"sizeSqm\" int4,\n  \"slug\" text NOT NULL,\n  \"sortOrder\" int4 DEFAULT 0 NOT NULL,\n  \"standardOccupancy\" int4 NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"roomType_occupancy_sane_f5a2c30b\" CHECK (\"maxOccupancy\" >= \"standardOccupancy\" AND \"standardOccupancy\" >= 1),\n  CONSTRAINT \"roomType_pricingMode_check_9fbdfe81\" CHECK (\"pricingMode\" IN ('PER_ROOM', 'PER_PERSON'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"roomType\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"roomType\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.roomTypeAmenity",
+    "label": "Create table \"roomTypeAmenity\"",
+    "summary": "Creates table \"roomTypeAmenity\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "table",
+        "name": "roomTypeAmenity"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"roomTypeAmenity\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"roomTypeAmenity\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"roomTypeAmenity\"",
+        "sql": "CREATE TABLE \"hotel\".\"roomTypeAmenity\" (\n  \"amenityId\" int4 NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"roomTypeId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"roomTypeAmenity\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"roomTypeAmenity\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.roomTypeImage",
+    "label": "Create table \"roomTypeImage\"",
+    "summary": "Creates table \"roomTypeImage\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "table",
+        "name": "roomTypeImage"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"roomTypeImage\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"roomTypeImage\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"roomTypeImage\"",
+        "sql": "CREATE TABLE \"hotel\".\"roomTypeImage\" (\n  \"alt\" text,\n  \"id\" SERIAL NOT NULL,\n  \"isPrimary\" bool DEFAULT false NOT NULL,\n  \"roomTypeId\" int4 NOT NULL,\n  \"sortOrder\" int4 DEFAULT 0 NOT NULL,\n  \"url\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"roomTypeImage\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"roomTypeImage\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.serviceItem",
+    "label": "Create table \"serviceItem\"",
+    "summary": "Creates table \"serviceItem\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "table",
+        "name": "serviceItem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"serviceItem\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"serviceItem\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"serviceItem\"",
+        "sql": "CREATE TABLE \"hotel\".\"serviceItem\" (\n  \"active\" bool DEFAULT true NOT NULL,\n  \"code\" text NOT NULL,\n  \"description\" text,\n  \"hotelId\" int4 NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"mandatory\" bool DEFAULT false NOT NULL,\n  \"name\" text NOT NULL,\n  \"price\" numeric(10,2) NOT NULL,\n  \"sortOrder\" int4 DEFAULT 0 NOT NULL,\n  \"unit\" text NOT NULL,\n  \"vatRate\" numeric(5,2),\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"serviceItem_unit_check_4bc12991\" CHECK (\"unit\" IN ('PER_STAY', 'PER_NIGHT', 'PER_DAY', 'PER_PERSON', 'PER_PERSON_NIGHT'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"serviceItem\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"serviceItem\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.amenity.amenity_hotelId_code_key",
+    "label": "Add unique constraint on \"amenity\" (hotelId, code)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "unique",
+        "name": "amenity_hotelId_code_key",
+        "table": "amenity"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"amenity_hotelId_code_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "amenity_hotelId_code_key",
+          "hotel",
+          "\"hotel\".\"amenity\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"amenity_hotelId_code_key\"",
+        "sql": "ALTER TABLE \"hotel\".\"amenity\" ADD CONSTRAINT \"amenity_hotelId_code_key\" UNIQUE (\"hotelId\", \"code\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"amenity_hotelId_code_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "amenity_hotelId_code_key",
+          "hotel",
+          "\"hotel\".\"amenity\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.booking.booking_bookingNumber_key",
+    "label": "Add unique constraint on \"booking\" (bookingNumber)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "unique",
+        "name": "booking_bookingNumber_key",
+        "table": "booking"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"booking_bookingNumber_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "booking_bookingNumber_key",
+          "hotel",
+          "\"hotel\".\"booking\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"booking_bookingNumber_key\"",
+        "sql": "ALTER TABLE \"hotel\".\"booking\" ADD CONSTRAINT \"booking_bookingNumber_key\" UNIQUE (\"bookingNumber\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"booking_bookingNumber_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "booking_bookingNumber_key",
+          "hotel",
+          "\"hotel\".\"booking\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.booking.booking_externalChannel_externalBookingId_key",
+    "label": "Add unique constraint on \"booking\" (externalChannel, externalBookingId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "unique",
+        "name": "booking_externalChannel_externalBookingId_key",
+        "table": "booking"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"booking_externalChannel_externalBookingId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "booking_externalChannel_externalBookingId_key",
+          "hotel",
+          "\"hotel\".\"booking\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"booking_externalChannel_externalBookingId_key\"",
+        "sql": "ALTER TABLE \"hotel\".\"booking\" ADD CONSTRAINT \"booking_externalChannel_externalBookingId_key\" UNIQUE (\"externalChannel\", \"externalBookingId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"booking_externalChannel_externalBookingId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "booking_externalChannel_externalBookingId_key",
+          "hotel",
+          "\"hotel\".\"booking\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.bookingRoomGuest.bookingRoomGuest_bookingRoomId_guestId_key",
+    "label": "Add unique constraint on \"bookingRoomGuest\" (bookingRoomId, guestId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "unique",
+        "name": "bookingRoomGuest_bookingRoomId_guestId_key",
+        "table": "bookingRoomGuest"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"bookingRoomGuest_bookingRoomId_guestId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bookingRoomGuest_bookingRoomId_guestId_key",
+          "hotel",
+          "\"hotel\".\"bookingRoomGuest\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"bookingRoomGuest_bookingRoomId_guestId_key\"",
+        "sql": "ALTER TABLE \"hotel\".\"bookingRoomGuest\" ADD CONSTRAINT \"bookingRoomGuest_bookingRoomId_guestId_key\" UNIQUE (\"bookingRoomId\", \"guestId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"bookingRoomGuest_bookingRoomId_guestId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bookingRoomGuest_bookingRoomId_guestId_key",
+          "hotel",
+          "\"hotel\".\"bookingRoomGuest\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.bookingRoomNight.bookingRoomNight_bookingRoomId_date_key",
+    "label": "Add unique constraint on \"bookingRoomNight\" (bookingRoomId, date)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "unique",
+        "name": "bookingRoomNight_bookingRoomId_date_key",
+        "table": "bookingRoomNight"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"bookingRoomNight_bookingRoomId_date_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bookingRoomNight_bookingRoomId_date_key",
+          "hotel",
+          "\"hotel\".\"bookingRoomNight\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"bookingRoomNight_bookingRoomId_date_key\"",
+        "sql": "ALTER TABLE \"hotel\".\"bookingRoomNight\" ADD CONSTRAINT \"bookingRoomNight_bookingRoomId_date_key\" UNIQUE (\"bookingRoomId\", \"date\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"bookingRoomNight_bookingRoomId_date_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bookingRoomNight_bookingRoomId_date_key",
+          "hotel",
+          "\"hotel\".\"bookingRoomNight\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.cancellationPolicy.cancellationPolicy_hotelId_code_key",
+    "label": "Add unique constraint on \"cancellationPolicy\" (hotelId, code)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "unique",
+        "name": "cancellationPolicy_hotelId_code_key",
+        "table": "cancellationPolicy"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"cancellationPolicy_hotelId_code_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "cancellationPolicy_hotelId_code_key",
+          "hotel",
+          "\"hotel\".\"cancellationPolicy\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"cancellationPolicy_hotelId_code_key\"",
+        "sql": "ALTER TABLE \"hotel\".\"cancellationPolicy\" ADD CONSTRAINT \"cancellationPolicy_hotelId_code_key\" UNIQUE (\"hotelId\", \"code\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"cancellationPolicy_hotelId_code_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "cancellationPolicy_hotelId_code_key",
+          "hotel",
+          "\"hotel\".\"cancellationPolicy\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.cancellationRule.cancellationRule_policyId_appliesFromDaysBefore_key",
+    "label": "Add unique constraint on \"cancellationRule\" (policyId, appliesFromDaysBefore)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "unique",
+        "name": "cancellationRule_policyId_appliesFromDaysBefore_key",
+        "table": "cancellationRule"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"cancellationRule_policyId_appliesFromDaysBefore_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "cancellationRule_policyId_appliesFromDaysBefore_key",
+          "hotel",
+          "\"hotel\".\"cancellationRule\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"cancellationRule_policyId_appliesFromDaysBefore_key\"",
+        "sql": "ALTER TABLE \"hotel\".\"cancellationRule\" ADD CONSTRAINT \"cancellationRule_policyId_appliesFromDaysBefore_key\" UNIQUE (\"policyId\", \"appliesFromDaysBefore\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"cancellationRule_policyId_appliesFromDaysBefore_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "cancellationRule_policyId_appliesFromDaysBefore_key",
+          "hotel",
+          "\"hotel\".\"cancellationRule\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.hotel.hotel_slug_key",
+    "label": "Add unique constraint on \"hotel\" (slug)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "unique",
+        "name": "hotel_slug_key",
+        "table": "hotel"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"hotel_slug_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "hotel_slug_key",
+          "hotel",
+          "\"hotel\".\"hotel\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"hotel_slug_key\"",
+        "sql": "ALTER TABLE \"hotel\".\"hotel\" ADD CONSTRAINT \"hotel_slug_key\" UNIQUE (\"slug\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"hotel_slug_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "hotel_slug_key",
+          "hotel",
+          "\"hotel\".\"hotel\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.hotelUser.hotelUser_email_key",
+    "label": "Add unique constraint on \"hotelUser\" (email)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "unique",
+        "name": "hotelUser_email_key",
+        "table": "hotelUser"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"hotelUser_email_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "hotelUser_email_key",
+          "hotel",
+          "\"hotel\".\"hotelUser\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"hotelUser_email_key\"",
+        "sql": "ALTER TABLE \"hotel\".\"hotelUser\" ADD CONSTRAINT \"hotelUser_email_key\" UNIQUE (\"email\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"hotelUser_email_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "hotelUser_email_key",
+          "hotel",
+          "\"hotel\".\"hotelUser\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.inventory.inventory_roomTypeId_date_key",
+    "label": "Add unique constraint on \"inventory\" (roomTypeId, date)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "unique",
+        "name": "inventory_roomTypeId_date_key",
+        "table": "inventory"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"inventory_roomTypeId_date_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "inventory_roomTypeId_date_key",
+          "hotel",
+          "\"hotel\".\"inventory\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"inventory_roomTypeId_date_key\"",
+        "sql": "ALTER TABLE \"hotel\".\"inventory\" ADD CONSTRAINT \"inventory_roomTypeId_date_key\" UNIQUE (\"roomTypeId\", \"date\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"inventory_roomTypeId_date_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "inventory_roomTypeId_date_key",
+          "hotel",
+          "\"hotel\".\"inventory\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.ratePlan.ratePlan_hotelId_code_key",
+    "label": "Add unique constraint on \"ratePlan\" (hotelId, code)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "unique",
+        "name": "ratePlan_hotelId_code_key",
+        "table": "ratePlan"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"ratePlan_hotelId_code_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ratePlan_hotelId_code_key",
+          "hotel",
+          "\"hotel\".\"ratePlan\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"ratePlan_hotelId_code_key\"",
+        "sql": "ALTER TABLE \"hotel\".\"ratePlan\" ADD CONSTRAINT \"ratePlan_hotelId_code_key\" UNIQUE (\"hotelId\", \"code\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"ratePlan_hotelId_code_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ratePlan_hotelId_code_key",
+          "hotel",
+          "\"hotel\".\"ratePlan\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.ratePrice.ratePrice_ratePlanId_roomTypeId_date_occupancy_key",
+    "label": "Add unique constraint on \"ratePrice\" (ratePlanId, roomTypeId, date, occupancy)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "unique",
+        "name": "ratePrice_ratePlanId_roomTypeId_date_occupancy_key",
+        "table": "ratePrice"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"ratePrice_ratePlanId_roomTypeId_date_occupancy_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ratePrice_ratePlanId_roomTypeId_date_occupancy_key",
+          "hotel",
+          "\"hotel\".\"ratePrice\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"ratePrice_ratePlanId_roomTypeId_date_occupancy_key\"",
+        "sql": "ALTER TABLE \"hotel\".\"ratePrice\" ADD CONSTRAINT \"ratePrice_ratePlanId_roomTypeId_date_occupancy_key\" UNIQUE (\"ratePlanId\", \"roomTypeId\", \"date\", \"occupancy\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"ratePrice_ratePlanId_roomTypeId_date_occupancy_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ratePrice_ratePlanId_roomTypeId_date_occupancy_key",
+          "hotel",
+          "\"hotel\".\"ratePrice\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.room.room_hotelId_number_key",
+    "label": "Add unique constraint on \"room\" (hotelId, number)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "unique",
+        "name": "room_hotelId_number_key",
+        "table": "room"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"room_hotelId_number_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "room_hotelId_number_key",
+          "hotel",
+          "\"hotel\".\"room\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"room_hotelId_number_key\"",
+        "sql": "ALTER TABLE \"hotel\".\"room\" ADD CONSTRAINT \"room_hotelId_number_key\" UNIQUE (\"hotelId\", \"number\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"room_hotelId_number_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "room_hotelId_number_key",
+          "hotel",
+          "\"hotel\".\"room\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.roomType.roomType_hotelId_code_key",
+    "label": "Add unique constraint on \"roomType\" (hotelId, code)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "unique",
+        "name": "roomType_hotelId_code_key",
+        "table": "roomType"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"roomType_hotelId_code_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "roomType_hotelId_code_key",
+          "hotel",
+          "\"hotel\".\"roomType\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"roomType_hotelId_code_key\"",
+        "sql": "ALTER TABLE \"hotel\".\"roomType\" ADD CONSTRAINT \"roomType_hotelId_code_key\" UNIQUE (\"hotelId\", \"code\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"roomType_hotelId_code_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "roomType_hotelId_code_key",
+          "hotel",
+          "\"hotel\".\"roomType\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.roomType.roomType_hotelId_slug_key",
+    "label": "Add unique constraint on \"roomType\" (hotelId, slug)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "unique",
+        "name": "roomType_hotelId_slug_key",
+        "table": "roomType"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"roomType_hotelId_slug_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "roomType_hotelId_slug_key",
+          "hotel",
+          "\"hotel\".\"roomType\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"roomType_hotelId_slug_key\"",
+        "sql": "ALTER TABLE \"hotel\".\"roomType\" ADD CONSTRAINT \"roomType_hotelId_slug_key\" UNIQUE (\"hotelId\", \"slug\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"roomType_hotelId_slug_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "roomType_hotelId_slug_key",
+          "hotel",
+          "\"hotel\".\"roomType\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.roomTypeAmenity.roomTypeAmenity_roomTypeId_amenityId_key",
+    "label": "Add unique constraint on \"roomTypeAmenity\" (roomTypeId, amenityId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "unique",
+        "name": "roomTypeAmenity_roomTypeId_amenityId_key",
+        "table": "roomTypeAmenity"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"roomTypeAmenity_roomTypeId_amenityId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "roomTypeAmenity_roomTypeId_amenityId_key",
+          "hotel",
+          "\"hotel\".\"roomTypeAmenity\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"roomTypeAmenity_roomTypeId_amenityId_key\"",
+        "sql": "ALTER TABLE \"hotel\".\"roomTypeAmenity\" ADD CONSTRAINT \"roomTypeAmenity_roomTypeId_amenityId_key\" UNIQUE (\"roomTypeId\", \"amenityId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"roomTypeAmenity_roomTypeId_amenityId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "roomTypeAmenity_roomTypeId_amenityId_key",
+          "hotel",
+          "\"hotel\".\"roomTypeAmenity\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.serviceItem.serviceItem_hotelId_code_key",
+    "label": "Add unique constraint on \"serviceItem\" (hotelId, code)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "unique",
+        "name": "serviceItem_hotelId_code_key",
+        "table": "serviceItem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"serviceItem_hotelId_code_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "serviceItem_hotelId_code_key",
+          "hotel",
+          "\"hotel\".\"serviceItem\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"serviceItem_hotelId_code_key\"",
+        "sql": "ALTER TABLE \"hotel\".\"serviceItem\" ADD CONSTRAINT \"serviceItem_hotelId_code_key\" UNIQUE (\"hotelId\", \"code\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"serviceItem_hotelId_code_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "serviceItem_hotelId_code_key",
+          "hotel",
+          "\"hotel\".\"serviceItem\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.amenity.amenity_hotelId_idx_462a16a4",
+    "label": "Create index \"amenity_hotelId_idx_462a16a4\" on \"amenity\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "amenity_hotelId_idx_462a16a4",
+        "table": "amenity"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"amenity_hotelId_idx_462a16a4\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"amenity_hotelId_idx_462a16a4\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"amenity_hotelId_idx_462a16a4\"",
+        "sql": "CREATE INDEX \"amenity_hotelId_idx_462a16a4\" ON \"hotel\".\"amenity\" (\"hotelId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"amenity_hotelId_idx_462a16a4\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"amenity_hotelId_idx_462a16a4\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.booking.booking_guestId_idx_39c95865",
+    "label": "Create index \"booking_guestId_idx_39c95865\" on \"booking\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "booking_guestId_idx_39c95865",
+        "table": "booking"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"booking_guestId_idx_39c95865\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"booking_guestId_idx_39c95865\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"booking_guestId_idx_39c95865\"",
+        "sql": "CREATE INDEX \"booking_guestId_idx_39c95865\" ON \"hotel\".\"booking\" (\"guestId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"booking_guestId_idx_39c95865\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"booking_guestId_idx_39c95865\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.booking.booking_hotelId_checkIn_idx_37dd233b",
+    "label": "Create index \"booking_hotelId_checkIn_idx_37dd233b\" on \"booking\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "booking_hotelId_checkIn_idx_37dd233b",
+        "table": "booking"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"booking_hotelId_checkIn_idx_37dd233b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"booking_hotelId_checkIn_idx_37dd233b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"booking_hotelId_checkIn_idx_37dd233b\"",
+        "sql": "CREATE INDEX \"booking_hotelId_checkIn_idx_37dd233b\" ON \"hotel\".\"booking\" (\"hotelId\", \"checkIn\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"booking_hotelId_checkIn_idx_37dd233b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"booking_hotelId_checkIn_idx_37dd233b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.booking.booking_hotelId_idx_462a16a4",
+    "label": "Create index \"booking_hotelId_idx_462a16a4\" on \"booking\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "booking_hotelId_idx_462a16a4",
+        "table": "booking"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"booking_hotelId_idx_462a16a4\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"booking_hotelId_idx_462a16a4\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"booking_hotelId_idx_462a16a4\"",
+        "sql": "CREATE INDEX \"booking_hotelId_idx_462a16a4\" ON \"hotel\".\"booking\" (\"hotelId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"booking_hotelId_idx_462a16a4\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"booking_hotelId_idx_462a16a4\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.booking.booking_hotelId_status_idx_9add637b",
+    "label": "Create index \"booking_hotelId_status_idx_9add637b\" on \"booking\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "booking_hotelId_status_idx_9add637b",
+        "table": "booking"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"booking_hotelId_status_idx_9add637b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"booking_hotelId_status_idx_9add637b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"booking_hotelId_status_idx_9add637b\"",
+        "sql": "CREATE INDEX \"booking_hotelId_status_idx_9add637b\" ON \"hotel\".\"booking\" (\"hotelId\", \"status\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"booking_hotelId_status_idx_9add637b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"booking_hotelId_status_idx_9add637b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.bookingExtra.bookingExtra_bookingId_idx_17848f4a",
+    "label": "Create index \"bookingExtra_bookingId_idx_17848f4a\" on \"bookingExtra\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "bookingExtra_bookingId_idx_17848f4a",
+        "table": "bookingExtra"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"bookingExtra_bookingId_idx_17848f4a\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingExtra_bookingId_idx_17848f4a\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"bookingExtra_bookingId_idx_17848f4a\"",
+        "sql": "CREATE INDEX \"bookingExtra_bookingId_idx_17848f4a\" ON \"hotel\".\"bookingExtra\" (\"bookingId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"bookingExtra_bookingId_idx_17848f4a\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingExtra_bookingId_idx_17848f4a\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.bookingExtra.bookingExtra_bookingRoomId_idx_d276de28",
+    "label": "Create index \"bookingExtra_bookingRoomId_idx_d276de28\" on \"bookingExtra\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "bookingExtra_bookingRoomId_idx_d276de28",
+        "table": "bookingExtra"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"bookingExtra_bookingRoomId_idx_d276de28\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingExtra_bookingRoomId_idx_d276de28\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"bookingExtra_bookingRoomId_idx_d276de28\"",
+        "sql": "CREATE INDEX \"bookingExtra_bookingRoomId_idx_d276de28\" ON \"hotel\".\"bookingExtra\" (\"bookingRoomId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"bookingExtra_bookingRoomId_idx_d276de28\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingExtra_bookingRoomId_idx_d276de28\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.bookingExtra.bookingExtra_serviceItemId_idx_92c43a54",
+    "label": "Create index \"bookingExtra_serviceItemId_idx_92c43a54\" on \"bookingExtra\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "bookingExtra_serviceItemId_idx_92c43a54",
+        "table": "bookingExtra"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"bookingExtra_serviceItemId_idx_92c43a54\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingExtra_serviceItemId_idx_92c43a54\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"bookingExtra_serviceItemId_idx_92c43a54\"",
+        "sql": "CREATE INDEX \"bookingExtra_serviceItemId_idx_92c43a54\" ON \"hotel\".\"bookingExtra\" (\"serviceItemId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"bookingExtra_serviceItemId_idx_92c43a54\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingExtra_serviceItemId_idx_92c43a54\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.bookingRoom.bookingRoom_bookingId_idx_17848f4a",
+    "label": "Create index \"bookingRoom_bookingId_idx_17848f4a\" on \"bookingRoom\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "bookingRoom_bookingId_idx_17848f4a",
+        "table": "bookingRoom"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"bookingRoom_bookingId_idx_17848f4a\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoom_bookingId_idx_17848f4a\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"bookingRoom_bookingId_idx_17848f4a\"",
+        "sql": "CREATE INDEX \"bookingRoom_bookingId_idx_17848f4a\" ON \"hotel\".\"bookingRoom\" (\"bookingId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"bookingRoom_bookingId_idx_17848f4a\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoom_bookingId_idx_17848f4a\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.bookingRoom.bookingRoom_ratePlanId_idx_18cf7a69",
+    "label": "Create index \"bookingRoom_ratePlanId_idx_18cf7a69\" on \"bookingRoom\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "bookingRoom_ratePlanId_idx_18cf7a69",
+        "table": "bookingRoom"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"bookingRoom_ratePlanId_idx_18cf7a69\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoom_ratePlanId_idx_18cf7a69\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"bookingRoom_ratePlanId_idx_18cf7a69\"",
+        "sql": "CREATE INDEX \"bookingRoom_ratePlanId_idx_18cf7a69\" ON \"hotel\".\"bookingRoom\" (\"ratePlanId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"bookingRoom_ratePlanId_idx_18cf7a69\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoom_ratePlanId_idx_18cf7a69\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.bookingRoom.bookingRoom_roomId_checkIn_idx_35b569d4",
+    "label": "Create index \"bookingRoom_roomId_checkIn_idx_35b569d4\" on \"bookingRoom\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "bookingRoom_roomId_checkIn_idx_35b569d4",
+        "table": "bookingRoom"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"bookingRoom_roomId_checkIn_idx_35b569d4\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoom_roomId_checkIn_idx_35b569d4\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"bookingRoom_roomId_checkIn_idx_35b569d4\"",
+        "sql": "CREATE INDEX \"bookingRoom_roomId_checkIn_idx_35b569d4\" ON \"hotel\".\"bookingRoom\" (\"roomId\", \"checkIn\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"bookingRoom_roomId_checkIn_idx_35b569d4\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoom_roomId_checkIn_idx_35b569d4\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.bookingRoom.bookingRoom_roomId_idx_fe51d647",
+    "label": "Create index \"bookingRoom_roomId_idx_fe51d647\" on \"bookingRoom\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "bookingRoom_roomId_idx_fe51d647",
+        "table": "bookingRoom"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"bookingRoom_roomId_idx_fe51d647\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoom_roomId_idx_fe51d647\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"bookingRoom_roomId_idx_fe51d647\"",
+        "sql": "CREATE INDEX \"bookingRoom_roomId_idx_fe51d647\" ON \"hotel\".\"bookingRoom\" (\"roomId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"bookingRoom_roomId_idx_fe51d647\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoom_roomId_idx_fe51d647\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.bookingRoom.bookingRoom_roomTypeId_checkIn_checkOut_idx_63f5ddf2",
+    "label": "Create index \"bookingRoom_roomTypeId_checkIn_checkOut_idx_63f5ddf2\" on \"bookingRoom\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "bookingRoom_roomTypeId_checkIn_checkOut_idx_63f5ddf2",
+        "table": "bookingRoom"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"bookingRoom_roomTypeId_checkIn_checkOut_idx_63f5ddf2\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoom_roomTypeId_checkIn_checkOut_idx_63f5ddf2\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"bookingRoom_roomTypeId_checkIn_checkOut_idx_63f5ddf2\"",
+        "sql": "CREATE INDEX \"bookingRoom_roomTypeId_checkIn_checkOut_idx_63f5ddf2\" ON \"hotel\".\"bookingRoom\" (\"roomTypeId\", \"checkIn\", \"checkOut\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"bookingRoom_roomTypeId_checkIn_checkOut_idx_63f5ddf2\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoom_roomTypeId_checkIn_checkOut_idx_63f5ddf2\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.bookingRoom.bookingRoom_roomTypeId_idx_0c4e04bc",
+    "label": "Create index \"bookingRoom_roomTypeId_idx_0c4e04bc\" on \"bookingRoom\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "bookingRoom_roomTypeId_idx_0c4e04bc",
+        "table": "bookingRoom"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"bookingRoom_roomTypeId_idx_0c4e04bc\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoom_roomTypeId_idx_0c4e04bc\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"bookingRoom_roomTypeId_idx_0c4e04bc\"",
+        "sql": "CREATE INDEX \"bookingRoom_roomTypeId_idx_0c4e04bc\" ON \"hotel\".\"bookingRoom\" (\"roomTypeId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"bookingRoom_roomTypeId_idx_0c4e04bc\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoom_roomTypeId_idx_0c4e04bc\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.bookingRoomGuest.bookingRoomGuest_bookingRoomId_idx_d276de28",
+    "label": "Create index \"bookingRoomGuest_bookingRoomId_idx_d276de28\" on \"bookingRoomGuest\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "bookingRoomGuest_bookingRoomId_idx_d276de28",
+        "table": "bookingRoomGuest"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"bookingRoomGuest_bookingRoomId_idx_d276de28\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoomGuest_bookingRoomId_idx_d276de28\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"bookingRoomGuest_bookingRoomId_idx_d276de28\"",
+        "sql": "CREATE INDEX \"bookingRoomGuest_bookingRoomId_idx_d276de28\" ON \"hotel\".\"bookingRoomGuest\" (\"bookingRoomId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"bookingRoomGuest_bookingRoomId_idx_d276de28\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoomGuest_bookingRoomId_idx_d276de28\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.bookingRoomGuest.bookingRoomGuest_guestId_idx_39c95865",
+    "label": "Create index \"bookingRoomGuest_guestId_idx_39c95865\" on \"bookingRoomGuest\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "bookingRoomGuest_guestId_idx_39c95865",
+        "table": "bookingRoomGuest"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"bookingRoomGuest_guestId_idx_39c95865\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoomGuest_guestId_idx_39c95865\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"bookingRoomGuest_guestId_idx_39c95865\"",
+        "sql": "CREATE INDEX \"bookingRoomGuest_guestId_idx_39c95865\" ON \"hotel\".\"bookingRoomGuest\" (\"guestId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"bookingRoomGuest_guestId_idx_39c95865\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoomGuest_guestId_idx_39c95865\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.bookingRoomNight.bookingRoomNight_bookingRoomId_idx_d276de28",
+    "label": "Create index \"bookingRoomNight_bookingRoomId_idx_d276de28\" on \"bookingRoomNight\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "bookingRoomNight_bookingRoomId_idx_d276de28",
+        "table": "bookingRoomNight"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"bookingRoomNight_bookingRoomId_idx_d276de28\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoomNight_bookingRoomId_idx_d276de28\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"bookingRoomNight_bookingRoomId_idx_d276de28\"",
+        "sql": "CREATE INDEX \"bookingRoomNight_bookingRoomId_idx_d276de28\" ON \"hotel\".\"bookingRoomNight\" (\"bookingRoomId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"bookingRoomNight_bookingRoomId_idx_d276de28\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoomNight_bookingRoomId_idx_d276de28\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.bookingRoomNight.bookingRoomNight_date_idx_b4ca319c",
+    "label": "Create index \"bookingRoomNight_date_idx_b4ca319c\" on \"bookingRoomNight\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "bookingRoomNight_date_idx_b4ca319c",
+        "table": "bookingRoomNight"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"bookingRoomNight_date_idx_b4ca319c\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoomNight_date_idx_b4ca319c\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"bookingRoomNight_date_idx_b4ca319c\"",
+        "sql": "CREATE INDEX \"bookingRoomNight_date_idx_b4ca319c\" ON \"hotel\".\"bookingRoomNight\" (\"date\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"bookingRoomNight_date_idx_b4ca319c\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoomNight_date_idx_b4ca319c\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.cancellationPolicy.cancellationPolicy_hotelId_idx_462a16a4",
+    "label": "Create index \"cancellationPolicy_hotelId_idx_462a16a4\" on \"cancellationPolicy\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "cancellationPolicy_hotelId_idx_462a16a4",
+        "table": "cancellationPolicy"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"cancellationPolicy_hotelId_idx_462a16a4\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"cancellationPolicy_hotelId_idx_462a16a4\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"cancellationPolicy_hotelId_idx_462a16a4\"",
+        "sql": "CREATE INDEX \"cancellationPolicy_hotelId_idx_462a16a4\" ON \"hotel\".\"cancellationPolicy\" (\"hotelId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"cancellationPolicy_hotelId_idx_462a16a4\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"cancellationPolicy_hotelId_idx_462a16a4\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.cancellationRule.cancellationRule_policyId_idx_17c369b7",
+    "label": "Create index \"cancellationRule_policyId_idx_17c369b7\" on \"cancellationRule\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "cancellationRule_policyId_idx_17c369b7",
+        "table": "cancellationRule"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"cancellationRule_policyId_idx_17c369b7\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"cancellationRule_policyId_idx_17c369b7\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"cancellationRule_policyId_idx_17c369b7\"",
+        "sql": "CREATE INDEX \"cancellationRule_policyId_idx_17c369b7\" ON \"hotel\".\"cancellationRule\" (\"policyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"cancellationRule_policyId_idx_17c369b7\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"cancellationRule_policyId_idx_17c369b7\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.guest.guest_email_idx_46df9cad",
+    "label": "Create index \"guest_email_idx_46df9cad\" on \"guest\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "guest_email_idx_46df9cad",
+        "table": "guest"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"guest_email_idx_46df9cad\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"guest_email_idx_46df9cad\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"guest_email_idx_46df9cad\"",
+        "sql": "CREATE INDEX \"guest_email_idx_46df9cad\" ON \"hotel\".\"guest\" (\"email\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"guest_email_idx_46df9cad\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"guest_email_idx_46df9cad\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.guest.guest_lastName_firstName_idx_3659da4b",
+    "label": "Create index \"guest_lastName_firstName_idx_3659da4b\" on \"guest\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "guest_lastName_firstName_idx_3659da4b",
+        "table": "guest"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"guest_lastName_firstName_idx_3659da4b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"guest_lastName_firstName_idx_3659da4b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"guest_lastName_firstName_idx_3659da4b\"",
+        "sql": "CREATE INDEX \"guest_lastName_firstName_idx_3659da4b\" ON \"hotel\".\"guest\" (\"lastName\", \"firstName\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"guest_lastName_firstName_idx_3659da4b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"guest_lastName_firstName_idx_3659da4b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.hotelUser.hotelUser_hotelId_idx_462a16a4",
+    "label": "Create index \"hotelUser_hotelId_idx_462a16a4\" on \"hotelUser\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "hotelUser_hotelId_idx_462a16a4",
+        "table": "hotelUser"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"hotelUser_hotelId_idx_462a16a4\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"hotelUser_hotelId_idx_462a16a4\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"hotelUser_hotelId_idx_462a16a4\"",
+        "sql": "CREATE INDEX \"hotelUser_hotelId_idx_462a16a4\" ON \"hotel\".\"hotelUser\" (\"hotelId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"hotelUser_hotelId_idx_462a16a4\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"hotelUser_hotelId_idx_462a16a4\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.inventory.inventory_date_idx_b4ca319c",
+    "label": "Create index \"inventory_date_idx_b4ca319c\" on \"inventory\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "inventory_date_idx_b4ca319c",
+        "table": "inventory"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"inventory_date_idx_b4ca319c\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"inventory_date_idx_b4ca319c\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"inventory_date_idx_b4ca319c\"",
+        "sql": "CREATE INDEX \"inventory_date_idx_b4ca319c\" ON \"hotel\".\"inventory\" (\"date\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"inventory_date_idx_b4ca319c\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"inventory_date_idx_b4ca319c\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.inventory.inventory_roomTypeId_idx_0c4e04bc",
+    "label": "Create index \"inventory_roomTypeId_idx_0c4e04bc\" on \"inventory\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "inventory_roomTypeId_idx_0c4e04bc",
+        "table": "inventory"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"inventory_roomTypeId_idx_0c4e04bc\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"inventory_roomTypeId_idx_0c4e04bc\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"inventory_roomTypeId_idx_0c4e04bc\"",
+        "sql": "CREATE INDEX \"inventory_roomTypeId_idx_0c4e04bc\" ON \"hotel\".\"inventory\" (\"roomTypeId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"inventory_roomTypeId_idx_0c4e04bc\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"inventory_roomTypeId_idx_0c4e04bc\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.ratePlan.ratePlan_cancellationPolicyId_idx_1c1d783e",
+    "label": "Create index \"ratePlan_cancellationPolicyId_idx_1c1d783e\" on \"ratePlan\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "ratePlan_cancellationPolicyId_idx_1c1d783e",
+        "table": "ratePlan"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"ratePlan_cancellationPolicyId_idx_1c1d783e\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"ratePlan_cancellationPolicyId_idx_1c1d783e\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"ratePlan_cancellationPolicyId_idx_1c1d783e\"",
+        "sql": "CREATE INDEX \"ratePlan_cancellationPolicyId_idx_1c1d783e\" ON \"hotel\".\"ratePlan\" (\"cancellationPolicyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"ratePlan_cancellationPolicyId_idx_1c1d783e\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"ratePlan_cancellationPolicyId_idx_1c1d783e\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.ratePlan.ratePlan_hotelId_active_idx_f1412091",
+    "label": "Create index \"ratePlan_hotelId_active_idx_f1412091\" on \"ratePlan\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "ratePlan_hotelId_active_idx_f1412091",
+        "table": "ratePlan"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"ratePlan_hotelId_active_idx_f1412091\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"ratePlan_hotelId_active_idx_f1412091\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"ratePlan_hotelId_active_idx_f1412091\"",
+        "sql": "CREATE INDEX \"ratePlan_hotelId_active_idx_f1412091\" ON \"hotel\".\"ratePlan\" (\"hotelId\", \"active\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"ratePlan_hotelId_active_idx_f1412091\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"ratePlan_hotelId_active_idx_f1412091\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.ratePlan.ratePlan_hotelId_idx_462a16a4",
+    "label": "Create index \"ratePlan_hotelId_idx_462a16a4\" on \"ratePlan\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "ratePlan_hotelId_idx_462a16a4",
+        "table": "ratePlan"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"ratePlan_hotelId_idx_462a16a4\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"ratePlan_hotelId_idx_462a16a4\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"ratePlan_hotelId_idx_462a16a4\"",
+        "sql": "CREATE INDEX \"ratePlan_hotelId_idx_462a16a4\" ON \"hotel\".\"ratePlan\" (\"hotelId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"ratePlan_hotelId_idx_462a16a4\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"ratePlan_hotelId_idx_462a16a4\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.ratePrice.ratePrice_ratePlanId_idx_18cf7a69",
+    "label": "Create index \"ratePrice_ratePlanId_idx_18cf7a69\" on \"ratePrice\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "ratePrice_ratePlanId_idx_18cf7a69",
+        "table": "ratePrice"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"ratePrice_ratePlanId_idx_18cf7a69\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"ratePrice_ratePlanId_idx_18cf7a69\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"ratePrice_ratePlanId_idx_18cf7a69\"",
+        "sql": "CREATE INDEX \"ratePrice_ratePlanId_idx_18cf7a69\" ON \"hotel\".\"ratePrice\" (\"ratePlanId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"ratePrice_ratePlanId_idx_18cf7a69\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"ratePrice_ratePlanId_idx_18cf7a69\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.ratePrice.ratePrice_roomTypeId_date_idx_e3cdd455",
+    "label": "Create index \"ratePrice_roomTypeId_date_idx_e3cdd455\" on \"ratePrice\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "ratePrice_roomTypeId_date_idx_e3cdd455",
+        "table": "ratePrice"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"ratePrice_roomTypeId_date_idx_e3cdd455\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"ratePrice_roomTypeId_date_idx_e3cdd455\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"ratePrice_roomTypeId_date_idx_e3cdd455\"",
+        "sql": "CREATE INDEX \"ratePrice_roomTypeId_date_idx_e3cdd455\" ON \"hotel\".\"ratePrice\" (\"roomTypeId\", \"date\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"ratePrice_roomTypeId_date_idx_e3cdd455\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"ratePrice_roomTypeId_date_idx_e3cdd455\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.ratePrice.ratePrice_roomTypeId_idx_0c4e04bc",
+    "label": "Create index \"ratePrice_roomTypeId_idx_0c4e04bc\" on \"ratePrice\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "ratePrice_roomTypeId_idx_0c4e04bc",
+        "table": "ratePrice"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"ratePrice_roomTypeId_idx_0c4e04bc\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"ratePrice_roomTypeId_idx_0c4e04bc\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"ratePrice_roomTypeId_idx_0c4e04bc\"",
+        "sql": "CREATE INDEX \"ratePrice_roomTypeId_idx_0c4e04bc\" ON \"hotel\".\"ratePrice\" (\"roomTypeId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"ratePrice_roomTypeId_idx_0c4e04bc\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"ratePrice_roomTypeId_idx_0c4e04bc\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.room.room_hotelId_idx_462a16a4",
+    "label": "Create index \"room_hotelId_idx_462a16a4\" on \"room\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "room_hotelId_idx_462a16a4",
+        "table": "room"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"room_hotelId_idx_462a16a4\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"room_hotelId_idx_462a16a4\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"room_hotelId_idx_462a16a4\"",
+        "sql": "CREATE INDEX \"room_hotelId_idx_462a16a4\" ON \"hotel\".\"room\" (\"hotelId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"room_hotelId_idx_462a16a4\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"room_hotelId_idx_462a16a4\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.room.room_roomTypeId_active_idx_90d77a69",
+    "label": "Create index \"room_roomTypeId_active_idx_90d77a69\" on \"room\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "room_roomTypeId_active_idx_90d77a69",
+        "table": "room"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"room_roomTypeId_active_idx_90d77a69\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"room_roomTypeId_active_idx_90d77a69\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"room_roomTypeId_active_idx_90d77a69\"",
+        "sql": "CREATE INDEX \"room_roomTypeId_active_idx_90d77a69\" ON \"hotel\".\"room\" (\"roomTypeId\", \"active\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"room_roomTypeId_active_idx_90d77a69\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"room_roomTypeId_active_idx_90d77a69\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.room.room_roomTypeId_idx_0c4e04bc",
+    "label": "Create index \"room_roomTypeId_idx_0c4e04bc\" on \"room\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "room_roomTypeId_idx_0c4e04bc",
+        "table": "room"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"room_roomTypeId_idx_0c4e04bc\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"room_roomTypeId_idx_0c4e04bc\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"room_roomTypeId_idx_0c4e04bc\"",
+        "sql": "CREATE INDEX \"room_roomTypeId_idx_0c4e04bc\" ON \"hotel\".\"room\" (\"roomTypeId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"room_roomTypeId_idx_0c4e04bc\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"room_roomTypeId_idx_0c4e04bc\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.roomType.roomType_hotelId_active_sortOrder_idx_a0fbd2a6",
+    "label": "Create index \"roomType_hotelId_active_sortOrder_idx_a0fbd2a6\" on \"roomType\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "roomType_hotelId_active_sortOrder_idx_a0fbd2a6",
+        "table": "roomType"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"roomType_hotelId_active_sortOrder_idx_a0fbd2a6\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"roomType_hotelId_active_sortOrder_idx_a0fbd2a6\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"roomType_hotelId_active_sortOrder_idx_a0fbd2a6\"",
+        "sql": "CREATE INDEX \"roomType_hotelId_active_sortOrder_idx_a0fbd2a6\" ON \"hotel\".\"roomType\" (\"hotelId\", \"active\", \"sortOrder\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"roomType_hotelId_active_sortOrder_idx_a0fbd2a6\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"roomType_hotelId_active_sortOrder_idx_a0fbd2a6\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.roomType.roomType_hotelId_idx_462a16a4",
+    "label": "Create index \"roomType_hotelId_idx_462a16a4\" on \"roomType\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "roomType_hotelId_idx_462a16a4",
+        "table": "roomType"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"roomType_hotelId_idx_462a16a4\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"roomType_hotelId_idx_462a16a4\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"roomType_hotelId_idx_462a16a4\"",
+        "sql": "CREATE INDEX \"roomType_hotelId_idx_462a16a4\" ON \"hotel\".\"roomType\" (\"hotelId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"roomType_hotelId_idx_462a16a4\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"roomType_hotelId_idx_462a16a4\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.roomTypeAmenity.roomTypeAmenity_amenityId_idx_28149e7b",
+    "label": "Create index \"roomTypeAmenity_amenityId_idx_28149e7b\" on \"roomTypeAmenity\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "roomTypeAmenity_amenityId_idx_28149e7b",
+        "table": "roomTypeAmenity"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"roomTypeAmenity_amenityId_idx_28149e7b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"roomTypeAmenity_amenityId_idx_28149e7b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"roomTypeAmenity_amenityId_idx_28149e7b\"",
+        "sql": "CREATE INDEX \"roomTypeAmenity_amenityId_idx_28149e7b\" ON \"hotel\".\"roomTypeAmenity\" (\"amenityId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"roomTypeAmenity_amenityId_idx_28149e7b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"roomTypeAmenity_amenityId_idx_28149e7b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.roomTypeAmenity.roomTypeAmenity_roomTypeId_idx_0c4e04bc",
+    "label": "Create index \"roomTypeAmenity_roomTypeId_idx_0c4e04bc\" on \"roomTypeAmenity\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "roomTypeAmenity_roomTypeId_idx_0c4e04bc",
+        "table": "roomTypeAmenity"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"roomTypeAmenity_roomTypeId_idx_0c4e04bc\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"roomTypeAmenity_roomTypeId_idx_0c4e04bc\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"roomTypeAmenity_roomTypeId_idx_0c4e04bc\"",
+        "sql": "CREATE INDEX \"roomTypeAmenity_roomTypeId_idx_0c4e04bc\" ON \"hotel\".\"roomTypeAmenity\" (\"roomTypeId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"roomTypeAmenity_roomTypeId_idx_0c4e04bc\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"roomTypeAmenity_roomTypeId_idx_0c4e04bc\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.roomTypeImage.roomTypeImage_roomTypeId_idx_0c4e04bc",
+    "label": "Create index \"roomTypeImage_roomTypeId_idx_0c4e04bc\" on \"roomTypeImage\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "roomTypeImage_roomTypeId_idx_0c4e04bc",
+        "table": "roomTypeImage"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"roomTypeImage_roomTypeId_idx_0c4e04bc\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"roomTypeImage_roomTypeId_idx_0c4e04bc\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"roomTypeImage_roomTypeId_idx_0c4e04bc\"",
+        "sql": "CREATE INDEX \"roomTypeImage_roomTypeId_idx_0c4e04bc\" ON \"hotel\".\"roomTypeImage\" (\"roomTypeId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"roomTypeImage_roomTypeId_idx_0c4e04bc\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"roomTypeImage_roomTypeId_idx_0c4e04bc\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.roomTypeImage.roomTypeImage_roomTypeId_sortOrder_idx_001bce14",
+    "label": "Create index \"roomTypeImage_roomTypeId_sortOrder_idx_001bce14\" on \"roomTypeImage\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "roomTypeImage_roomTypeId_sortOrder_idx_001bce14",
+        "table": "roomTypeImage"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"roomTypeImage_roomTypeId_sortOrder_idx_001bce14\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"roomTypeImage_roomTypeId_sortOrder_idx_001bce14\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"roomTypeImage_roomTypeId_sortOrder_idx_001bce14\"",
+        "sql": "CREATE INDEX \"roomTypeImage_roomTypeId_sortOrder_idx_001bce14\" ON \"hotel\".\"roomTypeImage\" (\"roomTypeId\", \"sortOrder\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"roomTypeImage_roomTypeId_sortOrder_idx_001bce14\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"roomTypeImage_roomTypeId_sortOrder_idx_001bce14\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.serviceItem.serviceItem_hotelId_active_idx_f1412091",
+    "label": "Create index \"serviceItem_hotelId_active_idx_f1412091\" on \"serviceItem\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "serviceItem_hotelId_active_idx_f1412091",
+        "table": "serviceItem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"serviceItem_hotelId_active_idx_f1412091\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"serviceItem_hotelId_active_idx_f1412091\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"serviceItem_hotelId_active_idx_f1412091\"",
+        "sql": "CREATE INDEX \"serviceItem_hotelId_active_idx_f1412091\" ON \"hotel\".\"serviceItem\" (\"hotelId\", \"active\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"serviceItem_hotelId_active_idx_f1412091\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"serviceItem_hotelId_active_idx_f1412091\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.serviceItem.serviceItem_hotelId_idx_462a16a4",
+    "label": "Create index \"serviceItem_hotelId_idx_462a16a4\" on \"serviceItem\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "serviceItem_hotelId_idx_462a16a4",
+        "table": "serviceItem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"serviceItem_hotelId_idx_462a16a4\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"serviceItem_hotelId_idx_462a16a4\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"serviceItem_hotelId_idx_462a16a4\"",
+        "sql": "CREATE INDEX \"serviceItem_hotelId_idx_462a16a4\" ON \"hotel\".\"serviceItem\" (\"hotelId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"serviceItem_hotelId_idx_462a16a4\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"serviceItem_hotelId_idx_462a16a4\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.amenity.amenity_hotelId_fkey",
+    "label": "Add foreign key \"amenity_hotelId_fkey\" on \"amenity\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "amenity_hotelId_fkey",
+        "table": "amenity"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"amenity_hotelId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "amenity_hotelId_fkey",
+          "hotel",
+          "\"hotel\".\"amenity\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"amenity_hotelId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"amenity\"\nADD CONSTRAINT \"amenity_hotelId_fkey\"\nFOREIGN KEY (\"hotelId\")\nREFERENCES \"hotel\".\"hotel\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"amenity_hotelId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "amenity_hotelId_fkey",
+          "hotel",
+          "\"hotel\".\"amenity\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.booking.booking_hotelId_fkey",
+    "label": "Add foreign key \"booking_hotelId_fkey\" on \"booking\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "booking_hotelId_fkey",
+        "table": "booking"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"booking_hotelId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "booking_hotelId_fkey",
+          "hotel",
+          "\"hotel\".\"booking\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"booking_hotelId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"booking\"\nADD CONSTRAINT \"booking_hotelId_fkey\"\nFOREIGN KEY (\"hotelId\")\nREFERENCES \"hotel\".\"hotel\" (\"id\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"booking_hotelId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "booking_hotelId_fkey",
+          "hotel",
+          "\"hotel\".\"booking\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.booking.booking_guestId_fkey",
+    "label": "Add foreign key \"booking_guestId_fkey\" on \"booking\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "booking_guestId_fkey",
+        "table": "booking"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"booking_guestId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "booking_guestId_fkey",
+          "hotel",
+          "\"hotel\".\"booking\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"booking_guestId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"booking\"\nADD CONSTRAINT \"booking_guestId_fkey\"\nFOREIGN KEY (\"guestId\")\nREFERENCES \"hotel\".\"guest\" (\"id\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"booking_guestId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "booking_guestId_fkey",
+          "hotel",
+          "\"hotel\".\"booking\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.bookingExtra.bookingExtra_bookingId_fkey",
+    "label": "Add foreign key \"bookingExtra_bookingId_fkey\" on \"bookingExtra\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "bookingExtra_bookingId_fkey",
+        "table": "bookingExtra"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"bookingExtra_bookingId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bookingExtra_bookingId_fkey",
+          "hotel",
+          "\"hotel\".\"bookingExtra\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"bookingExtra_bookingId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"bookingExtra\"\nADD CONSTRAINT \"bookingExtra_bookingId_fkey\"\nFOREIGN KEY (\"bookingId\")\nREFERENCES \"hotel\".\"booking\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"bookingExtra_bookingId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bookingExtra_bookingId_fkey",
+          "hotel",
+          "\"hotel\".\"bookingExtra\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.bookingExtra.bookingExtra_bookingRoomId_fkey",
+    "label": "Add foreign key \"bookingExtra_bookingRoomId_fkey\" on \"bookingExtra\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "bookingExtra_bookingRoomId_fkey",
+        "table": "bookingExtra"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"bookingExtra_bookingRoomId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bookingExtra_bookingRoomId_fkey",
+          "hotel",
+          "\"hotel\".\"bookingExtra\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"bookingExtra_bookingRoomId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"bookingExtra\"\nADD CONSTRAINT \"bookingExtra_bookingRoomId_fkey\"\nFOREIGN KEY (\"bookingRoomId\")\nREFERENCES \"hotel\".\"bookingRoom\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"bookingExtra_bookingRoomId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bookingExtra_bookingRoomId_fkey",
+          "hotel",
+          "\"hotel\".\"bookingExtra\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.bookingExtra.bookingExtra_serviceItemId_fkey",
+    "label": "Add foreign key \"bookingExtra_serviceItemId_fkey\" on \"bookingExtra\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "bookingExtra_serviceItemId_fkey",
+        "table": "bookingExtra"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"bookingExtra_serviceItemId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bookingExtra_serviceItemId_fkey",
+          "hotel",
+          "\"hotel\".\"bookingExtra\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"bookingExtra_serviceItemId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"bookingExtra\"\nADD CONSTRAINT \"bookingExtra_serviceItemId_fkey\"\nFOREIGN KEY (\"serviceItemId\")\nREFERENCES \"hotel\".\"serviceItem\" (\"id\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"bookingExtra_serviceItemId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bookingExtra_serviceItemId_fkey",
+          "hotel",
+          "\"hotel\".\"bookingExtra\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.bookingRoom.bookingRoom_bookingId_fkey",
+    "label": "Add foreign key \"bookingRoom_bookingId_fkey\" on \"bookingRoom\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "bookingRoom_bookingId_fkey",
+        "table": "bookingRoom"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"bookingRoom_bookingId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bookingRoom_bookingId_fkey",
+          "hotel",
+          "\"hotel\".\"bookingRoom\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"bookingRoom_bookingId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"bookingRoom\"\nADD CONSTRAINT \"bookingRoom_bookingId_fkey\"\nFOREIGN KEY (\"bookingId\")\nREFERENCES \"hotel\".\"booking\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"bookingRoom_bookingId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bookingRoom_bookingId_fkey",
+          "hotel",
+          "\"hotel\".\"bookingRoom\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.bookingRoom.bookingRoom_roomTypeId_fkey",
+    "label": "Add foreign key \"bookingRoom_roomTypeId_fkey\" on \"bookingRoom\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "bookingRoom_roomTypeId_fkey",
+        "table": "bookingRoom"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"bookingRoom_roomTypeId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bookingRoom_roomTypeId_fkey",
+          "hotel",
+          "\"hotel\".\"bookingRoom\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"bookingRoom_roomTypeId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"bookingRoom\"\nADD CONSTRAINT \"bookingRoom_roomTypeId_fkey\"\nFOREIGN KEY (\"roomTypeId\")\nREFERENCES \"hotel\".\"roomType\" (\"id\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"bookingRoom_roomTypeId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bookingRoom_roomTypeId_fkey",
+          "hotel",
+          "\"hotel\".\"bookingRoom\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.bookingRoom.bookingRoom_roomId_fkey",
+    "label": "Add foreign key \"bookingRoom_roomId_fkey\" on \"bookingRoom\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "bookingRoom_roomId_fkey",
+        "table": "bookingRoom"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"bookingRoom_roomId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bookingRoom_roomId_fkey",
+          "hotel",
+          "\"hotel\".\"bookingRoom\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"bookingRoom_roomId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"bookingRoom\"\nADD CONSTRAINT \"bookingRoom_roomId_fkey\"\nFOREIGN KEY (\"roomId\")\nREFERENCES \"hotel\".\"room\" (\"id\")\nON DELETE SET NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"bookingRoom_roomId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bookingRoom_roomId_fkey",
+          "hotel",
+          "\"hotel\".\"bookingRoom\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.bookingRoom.bookingRoom_ratePlanId_fkey",
+    "label": "Add foreign key \"bookingRoom_ratePlanId_fkey\" on \"bookingRoom\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "bookingRoom_ratePlanId_fkey",
+        "table": "bookingRoom"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"bookingRoom_ratePlanId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bookingRoom_ratePlanId_fkey",
+          "hotel",
+          "\"hotel\".\"bookingRoom\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"bookingRoom_ratePlanId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"bookingRoom\"\nADD CONSTRAINT \"bookingRoom_ratePlanId_fkey\"\nFOREIGN KEY (\"ratePlanId\")\nREFERENCES \"hotel\".\"ratePlan\" (\"id\")\nON DELETE SET NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"bookingRoom_ratePlanId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bookingRoom_ratePlanId_fkey",
+          "hotel",
+          "\"hotel\".\"bookingRoom\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.bookingRoomGuest.bookingRoomGuest_bookingRoomId_fkey",
+    "label": "Add foreign key \"bookingRoomGuest_bookingRoomId_fkey\" on \"bookingRoomGuest\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "bookingRoomGuest_bookingRoomId_fkey",
+        "table": "bookingRoomGuest"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"bookingRoomGuest_bookingRoomId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bookingRoomGuest_bookingRoomId_fkey",
+          "hotel",
+          "\"hotel\".\"bookingRoomGuest\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"bookingRoomGuest_bookingRoomId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"bookingRoomGuest\"\nADD CONSTRAINT \"bookingRoomGuest_bookingRoomId_fkey\"\nFOREIGN KEY (\"bookingRoomId\")\nREFERENCES \"hotel\".\"bookingRoom\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"bookingRoomGuest_bookingRoomId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bookingRoomGuest_bookingRoomId_fkey",
+          "hotel",
+          "\"hotel\".\"bookingRoomGuest\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.bookingRoomGuest.bookingRoomGuest_guestId_fkey",
+    "label": "Add foreign key \"bookingRoomGuest_guestId_fkey\" on \"bookingRoomGuest\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "bookingRoomGuest_guestId_fkey",
+        "table": "bookingRoomGuest"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"bookingRoomGuest_guestId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bookingRoomGuest_guestId_fkey",
+          "hotel",
+          "\"hotel\".\"bookingRoomGuest\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"bookingRoomGuest_guestId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"bookingRoomGuest\"\nADD CONSTRAINT \"bookingRoomGuest_guestId_fkey\"\nFOREIGN KEY (\"guestId\")\nREFERENCES \"hotel\".\"guest\" (\"id\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"bookingRoomGuest_guestId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bookingRoomGuest_guestId_fkey",
+          "hotel",
+          "\"hotel\".\"bookingRoomGuest\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.bookingRoomNight.bookingRoomNight_bookingRoomId_fkey",
+    "label": "Add foreign key \"bookingRoomNight_bookingRoomId_fkey\" on \"bookingRoomNight\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "bookingRoomNight_bookingRoomId_fkey",
+        "table": "bookingRoomNight"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"bookingRoomNight_bookingRoomId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bookingRoomNight_bookingRoomId_fkey",
+          "hotel",
+          "\"hotel\".\"bookingRoomNight\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"bookingRoomNight_bookingRoomId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"bookingRoomNight\"\nADD CONSTRAINT \"bookingRoomNight_bookingRoomId_fkey\"\nFOREIGN KEY (\"bookingRoomId\")\nREFERENCES \"hotel\".\"bookingRoom\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"bookingRoomNight_bookingRoomId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bookingRoomNight_bookingRoomId_fkey",
+          "hotel",
+          "\"hotel\".\"bookingRoomNight\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.cancellationPolicy.cancellationPolicy_hotelId_fkey",
+    "label": "Add foreign key \"cancellationPolicy_hotelId_fkey\" on \"cancellationPolicy\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "cancellationPolicy_hotelId_fkey",
+        "table": "cancellationPolicy"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"cancellationPolicy_hotelId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "cancellationPolicy_hotelId_fkey",
+          "hotel",
+          "\"hotel\".\"cancellationPolicy\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"cancellationPolicy_hotelId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"cancellationPolicy\"\nADD CONSTRAINT \"cancellationPolicy_hotelId_fkey\"\nFOREIGN KEY (\"hotelId\")\nREFERENCES \"hotel\".\"hotel\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"cancellationPolicy_hotelId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "cancellationPolicy_hotelId_fkey",
+          "hotel",
+          "\"hotel\".\"cancellationPolicy\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.cancellationRule.cancellationRule_policyId_fkey",
+    "label": "Add foreign key \"cancellationRule_policyId_fkey\" on \"cancellationRule\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "cancellationRule_policyId_fkey",
+        "table": "cancellationRule"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"cancellationRule_policyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "cancellationRule_policyId_fkey",
+          "hotel",
+          "\"hotel\".\"cancellationRule\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"cancellationRule_policyId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"cancellationRule\"\nADD CONSTRAINT \"cancellationRule_policyId_fkey\"\nFOREIGN KEY (\"policyId\")\nREFERENCES \"hotel\".\"cancellationPolicy\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"cancellationRule_policyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "cancellationRule_policyId_fkey",
+          "hotel",
+          "\"hotel\".\"cancellationRule\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.hotelUser.hotelUser_hotelId_fkey",
+    "label": "Add foreign key \"hotelUser_hotelId_fkey\" on \"hotelUser\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "hotelUser_hotelId_fkey",
+        "table": "hotelUser"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"hotelUser_hotelId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "hotelUser_hotelId_fkey",
+          "hotel",
+          "\"hotel\".\"hotelUser\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"hotelUser_hotelId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"hotelUser\"\nADD CONSTRAINT \"hotelUser_hotelId_fkey\"\nFOREIGN KEY (\"hotelId\")\nREFERENCES \"hotel\".\"hotel\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"hotelUser_hotelId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "hotelUser_hotelId_fkey",
+          "hotel",
+          "\"hotel\".\"hotelUser\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.inventory.inventory_roomTypeId_fkey",
+    "label": "Add foreign key \"inventory_roomTypeId_fkey\" on \"inventory\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "inventory_roomTypeId_fkey",
+        "table": "inventory"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"inventory_roomTypeId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "inventory_roomTypeId_fkey",
+          "hotel",
+          "\"hotel\".\"inventory\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"inventory_roomTypeId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"inventory\"\nADD CONSTRAINT \"inventory_roomTypeId_fkey\"\nFOREIGN KEY (\"roomTypeId\")\nREFERENCES \"hotel\".\"roomType\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"inventory_roomTypeId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "inventory_roomTypeId_fkey",
+          "hotel",
+          "\"hotel\".\"inventory\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.ratePlan.ratePlan_hotelId_fkey",
+    "label": "Add foreign key \"ratePlan_hotelId_fkey\" on \"ratePlan\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "ratePlan_hotelId_fkey",
+        "table": "ratePlan"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"ratePlan_hotelId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ratePlan_hotelId_fkey",
+          "hotel",
+          "\"hotel\".\"ratePlan\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"ratePlan_hotelId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"ratePlan\"\nADD CONSTRAINT \"ratePlan_hotelId_fkey\"\nFOREIGN KEY (\"hotelId\")\nREFERENCES \"hotel\".\"hotel\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"ratePlan_hotelId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ratePlan_hotelId_fkey",
+          "hotel",
+          "\"hotel\".\"ratePlan\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.ratePlan.ratePlan_cancellationPolicyId_fkey",
+    "label": "Add foreign key \"ratePlan_cancellationPolicyId_fkey\" on \"ratePlan\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "ratePlan_cancellationPolicyId_fkey",
+        "table": "ratePlan"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"ratePlan_cancellationPolicyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ratePlan_cancellationPolicyId_fkey",
+          "hotel",
+          "\"hotel\".\"ratePlan\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"ratePlan_cancellationPolicyId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"ratePlan\"\nADD CONSTRAINT \"ratePlan_cancellationPolicyId_fkey\"\nFOREIGN KEY (\"cancellationPolicyId\")\nREFERENCES \"hotel\".\"cancellationPolicy\" (\"id\")\nON DELETE SET NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"ratePlan_cancellationPolicyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ratePlan_cancellationPolicyId_fkey",
+          "hotel",
+          "\"hotel\".\"ratePlan\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.ratePrice.ratePrice_ratePlanId_fkey",
+    "label": "Add foreign key \"ratePrice_ratePlanId_fkey\" on \"ratePrice\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "ratePrice_ratePlanId_fkey",
+        "table": "ratePrice"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"ratePrice_ratePlanId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ratePrice_ratePlanId_fkey",
+          "hotel",
+          "\"hotel\".\"ratePrice\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"ratePrice_ratePlanId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"ratePrice\"\nADD CONSTRAINT \"ratePrice_ratePlanId_fkey\"\nFOREIGN KEY (\"ratePlanId\")\nREFERENCES \"hotel\".\"ratePlan\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"ratePrice_ratePlanId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ratePrice_ratePlanId_fkey",
+          "hotel",
+          "\"hotel\".\"ratePrice\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.ratePrice.ratePrice_roomTypeId_fkey",
+    "label": "Add foreign key \"ratePrice_roomTypeId_fkey\" on \"ratePrice\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "ratePrice_roomTypeId_fkey",
+        "table": "ratePrice"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"ratePrice_roomTypeId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ratePrice_roomTypeId_fkey",
+          "hotel",
+          "\"hotel\".\"ratePrice\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"ratePrice_roomTypeId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"ratePrice\"\nADD CONSTRAINT \"ratePrice_roomTypeId_fkey\"\nFOREIGN KEY (\"roomTypeId\")\nREFERENCES \"hotel\".\"roomType\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"ratePrice_roomTypeId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ratePrice_roomTypeId_fkey",
+          "hotel",
+          "\"hotel\".\"ratePrice\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.room.room_hotelId_fkey",
+    "label": "Add foreign key \"room_hotelId_fkey\" on \"room\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "room_hotelId_fkey",
+        "table": "room"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"room_hotelId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "room_hotelId_fkey",
+          "hotel",
+          "\"hotel\".\"room\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"room_hotelId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"room\"\nADD CONSTRAINT \"room_hotelId_fkey\"\nFOREIGN KEY (\"hotelId\")\nREFERENCES \"hotel\".\"hotel\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"room_hotelId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "room_hotelId_fkey",
+          "hotel",
+          "\"hotel\".\"room\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.room.room_roomTypeId_fkey",
+    "label": "Add foreign key \"room_roomTypeId_fkey\" on \"room\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "room_roomTypeId_fkey",
+        "table": "room"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"room_roomTypeId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "room_roomTypeId_fkey",
+          "hotel",
+          "\"hotel\".\"room\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"room_roomTypeId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"room\"\nADD CONSTRAINT \"room_roomTypeId_fkey\"\nFOREIGN KEY (\"roomTypeId\")\nREFERENCES \"hotel\".\"roomType\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"room_roomTypeId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "room_roomTypeId_fkey",
+          "hotel",
+          "\"hotel\".\"room\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.roomType.roomType_hotelId_fkey",
+    "label": "Add foreign key \"roomType_hotelId_fkey\" on \"roomType\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "roomType_hotelId_fkey",
+        "table": "roomType"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"roomType_hotelId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "roomType_hotelId_fkey",
+          "hotel",
+          "\"hotel\".\"roomType\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"roomType_hotelId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"roomType\"\nADD CONSTRAINT \"roomType_hotelId_fkey\"\nFOREIGN KEY (\"hotelId\")\nREFERENCES \"hotel\".\"hotel\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"roomType_hotelId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "roomType_hotelId_fkey",
+          "hotel",
+          "\"hotel\".\"roomType\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.roomTypeAmenity.roomTypeAmenity_roomTypeId_fkey",
+    "label": "Add foreign key \"roomTypeAmenity_roomTypeId_fkey\" on \"roomTypeAmenity\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "roomTypeAmenity_roomTypeId_fkey",
+        "table": "roomTypeAmenity"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"roomTypeAmenity_roomTypeId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "roomTypeAmenity_roomTypeId_fkey",
+          "hotel",
+          "\"hotel\".\"roomTypeAmenity\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"roomTypeAmenity_roomTypeId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"roomTypeAmenity\"\nADD CONSTRAINT \"roomTypeAmenity_roomTypeId_fkey\"\nFOREIGN KEY (\"roomTypeId\")\nREFERENCES \"hotel\".\"roomType\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"roomTypeAmenity_roomTypeId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "roomTypeAmenity_roomTypeId_fkey",
+          "hotel",
+          "\"hotel\".\"roomTypeAmenity\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.roomTypeAmenity.roomTypeAmenity_amenityId_fkey",
+    "label": "Add foreign key \"roomTypeAmenity_amenityId_fkey\" on \"roomTypeAmenity\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "roomTypeAmenity_amenityId_fkey",
+        "table": "roomTypeAmenity"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"roomTypeAmenity_amenityId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "roomTypeAmenity_amenityId_fkey",
+          "hotel",
+          "\"hotel\".\"roomTypeAmenity\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"roomTypeAmenity_amenityId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"roomTypeAmenity\"\nADD CONSTRAINT \"roomTypeAmenity_amenityId_fkey\"\nFOREIGN KEY (\"amenityId\")\nREFERENCES \"hotel\".\"amenity\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"roomTypeAmenity_amenityId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "roomTypeAmenity_amenityId_fkey",
+          "hotel",
+          "\"hotel\".\"roomTypeAmenity\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.roomTypeImage.roomTypeImage_roomTypeId_fkey",
+    "label": "Add foreign key \"roomTypeImage_roomTypeId_fkey\" on \"roomTypeImage\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "roomTypeImage_roomTypeId_fkey",
+        "table": "roomTypeImage"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"roomTypeImage_roomTypeId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "roomTypeImage_roomTypeId_fkey",
+          "hotel",
+          "\"hotel\".\"roomTypeImage\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"roomTypeImage_roomTypeId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"roomTypeImage\"\nADD CONSTRAINT \"roomTypeImage_roomTypeId_fkey\"\nFOREIGN KEY (\"roomTypeId\")\nREFERENCES \"hotel\".\"roomType\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"roomTypeImage_roomTypeId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "roomTypeImage_roomTypeId_fkey",
+          "hotel",
+          "\"hotel\".\"roomTypeImage\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.serviceItem.serviceItem_hotelId_fkey",
+    "label": "Add foreign key \"serviceItem_hotelId_fkey\" on \"serviceItem\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "serviceItem_hotelId_fkey",
+        "table": "serviceItem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"serviceItem_hotelId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "serviceItem_hotelId_fkey",
+          "hotel",
+          "\"hotel\".\"serviceItem\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"serviceItem_hotelId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"serviceItem\"\nADD CONSTRAINT \"serviceItem_hotelId_fkey\"\nFOREIGN KEY (\"hotelId\")\nREFERENCES \"hotel\".\"hotel\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"serviceItem_hotelId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "serviceItem_hotelId_fkey",
+          "hotel",
+          "\"hotel\".\"serviceItem\""
+        ]
+      }
+    ]
+  }
+]
