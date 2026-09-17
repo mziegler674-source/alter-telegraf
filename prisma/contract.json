@@ -12,6 +12,10 @@
       "model": "MenuTemplate",
       "namespace": "public"
     },
+    "reservation": {
+      "model": "Reservation",
+      "namespace": "public"
+    },
     "restaurant": {
       "model": "Restaurant",
       "namespace": "public"
@@ -219,6 +223,153 @@
               "table": "menuTemplate"
             }
           },
+          "Reservation": {
+            "fields": {
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "email": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "firstName": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "guests": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "lastName": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "message": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "phone": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "reservationDate": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "reservationTime": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "restaurantId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "status": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "restaurant": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "restaurantId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Restaurant",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "email": {
+                  "column": "email"
+                },
+                "firstName": {
+                  "column": "firstName"
+                },
+                "guests": {
+                  "column": "guests"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "lastName": {
+                  "column": "lastName"
+                },
+                "message": {
+                  "column": "message"
+                },
+                "phone": {
+                  "column": "phone"
+                },
+                "reservationDate": {
+                  "column": "reservationDate"
+                },
+                "reservationTime": {
+                  "column": "reservationTime"
+                },
+                "restaurantId": {
+                  "column": "restaurantId"
+                },
+                "status": {
+                  "column": "status"
+                }
+              },
+              "namespaceId": "public",
+              "table": "reservation"
+            }
+          },
           "Restaurant": {
             "fields": {
               "createdAt": {
@@ -278,6 +429,21 @@
                 },
                 "to": {
                   "model": "MenuTemplate",
+                  "namespace": "public"
+                }
+              },
+              "reservations": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "restaurantId"
+                  ]
+                },
+                "to": {
+                  "model": "Reservation",
                   "namespace": "public"
                 }
               },
@@ -587,6 +753,135 @@
               },
               "uniques": []
             },
+            "reservation": {
+              "columns": {
+                "createdAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "email": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "firstName": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "guests": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "lastName": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "message": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "phone": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "reservationDate": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "reservationTime": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "restaurantId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "status": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "NEW"
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "restaurantId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "reservation"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "restaurant"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "restaurantId"
+                  ],
+                  "name": "reservation_restaurantId_idx_cf3ee7d0",
+                  "prefix": "reservation_restaurantId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "restaurantId",
+                    "reservationDate"
+                  ],
+                  "name": "reservation_restaurantId_reservationDate_idx_da900b66",
+                  "prefix": "reservation_restaurantId_reservationDate_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "restaurantId",
+                    "status"
+                  ],
+                  "name": "reservation_restaurantId_status_idx_a6df7642",
+                  "prefix": "reservation_restaurantId_status_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
+            },
             "restaurant": {
               "columns": {
                 "createdAt": {
@@ -726,7 +1021,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "dd5a849c946256967095ea1866ae86329d5c28e994618909fae488cdc190545b"
+    "storageHash": "61a9f9729fb88e32b8831378f9dd5e91643077af0fc124fdfdc5a07af85e3396"
   },
   "capabilities": {
     "postgres": {

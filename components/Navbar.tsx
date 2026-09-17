@@ -2,19 +2,48 @@
 
 import { useState } from "react";
 
-export default function Navbar() {
+type NavbarProps = {
+  section?: "home" | "restaurant" | "hotel";
+};
+
+export default function Navbar({ section = "home" }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const closeMenu = () => setIsOpen(false);
 
+  const restaurantLinks = [
+    { label: "Speisekarte", href: "/restaurant#speisekarte" },
+    {
+      label: "Tagesempfehlung",
+      href: "/restaurant#tagesempfehlung",
+    },
+    { label: "Über uns", href: "/restaurant#ueber-uns" },
+    { label: "Gastgarten", href: "/restaurant#gastgarten" },
+  ];
+
+  const hotelLinks = [
+    { label: "Zimmer", href: "/hotel#zimmer" },
+    { label: "Übernachten", href: "/hotel#uebernachten" },
+    { label: "Ausstattung", href: "/hotel#ausstattung" },
+    { label: "Kontakt", href: "/hotel#kontakt" },
+  ];
+
+  const links =
+    section === "restaurant"
+      ? restaurantLinks
+      : section === "hotel"
+        ? hotelLinks
+        : [];
+
+  const isHome = section === "home";
+
   return (
     <header className="absolute left-0 right-0 top-0 z-50">
-      <div className="mx-auto max-w-7xl px-6 py-6 lg:px-10">
+      <div className="mx-auto max-w-7xl px-6 py-5 lg:px-10">
         <nav className="flex items-center justify-between">
-
-          {/* Logo */}
+          {/* LOGO */}
           <a
-            href="#"
+            href="/"
             onClick={closeMenu}
             className="flex flex-col leading-none"
           >
@@ -22,65 +51,69 @@ export default function Navbar() {
               ALTER TELEGRAF
             </span>
 
-            <span className="mt-1 text-[10px] uppercase tracking-[0.35em] text-[#c9a96a]">
-              Hendl-Eck · Graz
+            <span className="mt-1 text-[10px] uppercase tracking-[0.35em] text-[#d8c39a]">
+              Graz · Grabenstraße
             </span>
           </a>
 
-          {/* Desktop Navigation */}
-          <div className="hidden items-center gap-8 md:flex">
+          {/* DESKTOP NAVIGATION */}
+          <div className="hidden items-center gap-7 md:flex">
+            {isHome ? (
+              <>
+                <a
+                  href="/restaurant"
+                  className="text-sm font-medium text-white/85 transition hover:text-[#d8c39a]"
+                >
+                  Hendl-Eck
+                </a>
 
-            <a
-              href="#speisekarte"
-              className="text-sm font-medium text-white/75 hover:text-[#c9a96a]"
-            >
-              Speisekarte
-            </a>
+                <a
+                  href="/hotel"
+                  className="text-sm font-medium text-white/85 transition hover:text-[#d8c39a]"
+                >
+                  Hotel
+                </a>
+              </>
+            ) : (
+              <>
+                {links.map((link) => (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    className="text-sm font-medium text-white/85 transition hover:text-[#d8c39a]"
+                  >
+                    {link.label}
+                  </a>
+                ))}
 
-            <a
-              href="#tagesmenue"
-              className="text-sm font-medium text-white/75 hover:text-[#c9a96a]"
-            >
-              Tagesmenü
-            </a>
+                {section === "restaurant" && (
+                  <a
+                    href="/restaurant#reservieren"
+                    className="ml-2 rounded-full bg-[#315c45] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#264936]"
+                  >
+                    Tisch reservieren
+                  </a>
+                )}
 
-            <a
-              href="#ueber-uns"
-              className="text-sm font-medium text-white/75 hover:text-[#c9a96a]"
-            >
-              Über uns
-            </a>
-
-            <a
-              href="#gastgarten"
-              className="text-sm font-medium text-white/75 hover:text-[#c9a96a]"
-            >
-              Gastgarten
-            </a>
-
-            <a
-              href="#kontakt"
-              className="text-sm font-medium text-white/75 hover:text-[#c9a96a]"
-            >
-              Kontakt
-            </a>
-
-            <a
-              href="#reservieren"
-              className="ml-2 rounded-full border border-[#c9a96a]/70 bg-[#c9a96a]/10 px-5 py-2.5 text-sm font-semibold text-white hover:border-[#c9a96a] hover:bg-[#c9a96a] hover:text-[#211f1b]"
-            >
-              Tisch reservieren
-            </a>
-
+                {section === "hotel" && (
+                  <a
+                    href="/hotel#kontakt"
+                    className="ml-2 rounded-full bg-[#315c45] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#264936]"
+                  >
+                    Anfrage stellen
+                  </a>
+                )}
+              </>
+            )}
           </div>
 
-          {/* Mobile Button */}
+          {/* MOBILE BUTTON */}
           <button
             type="button"
             onClick={() => setIsOpen(!isOpen)}
             aria-label="Menü öffnen"
             aria-expanded={isOpen}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-white/30 text-white hover:border-[#c9a96a] hover:text-[#c9a96a] md:hidden"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-white/30 text-white transition hover:border-[#d8c39a] hover:text-[#d8c39a] md:hidden"
           >
             <div className="flex flex-col gap-1.5">
               <span
@@ -88,11 +121,13 @@ export default function Navbar() {
                   isOpen ? "translate-y-[4px] rotate-45" : ""
                 }`}
               />
+
               <span
                 className={`block h-px w-5 bg-current transition ${
                   isOpen ? "opacity-0" : ""
                 }`}
               />
+
               <span
                 className={`block h-px w-5 bg-current transition ${
                   isOpen ? "-translate-y-[4px] -rotate-45" : ""
@@ -100,68 +135,67 @@ export default function Navbar() {
               />
             </div>
           </button>
-
         </nav>
 
-        {/* Mobile Navigation */}
+        {/* MOBILE NAVIGATION */}
         {isOpen && (
-          <div className="mt-5 overflow-hidden rounded-2xl border border-white/10 bg-[#211f1b]/95 p-4 shadow-2xl backdrop-blur-md md:hidden">
-
+          <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-[#211f1b]/95 p-4 shadow-2xl backdrop-blur-md md:hidden">
             <div className="flex flex-col">
+              {isHome ? (
+                <>
+                  <a
+                    href="/restaurant"
+                    onClick={closeMenu}
+                    className="border-b border-white/10 px-4 py-4 text-sm font-medium text-white/85"
+                  >
+                    Hendl-Eck
+                  </a>
 
-              <a
-                href="#speisekarte"
-                onClick={closeMenu}
-                className="border-b border-white/10 px-4 py-4 text-sm font-medium text-white/80 hover:text-[#c9a96a]"
-              >
-                Speisekarte
-              </a>
+                  <a
+                    href="/hotel"
+                    onClick={closeMenu}
+                    className="px-4 py-4 text-sm font-medium text-white/85"
+                  >
+                    Hotel Alter Telegraf
+                  </a>
+                </>
+              ) : (
+                <>
+                  {links.map((link) => (
+                    <a
+                      key={link.href}
+                      href={link.href}
+                      onClick={closeMenu}
+                      className="border-b border-white/10 px-4 py-4 text-sm font-medium text-white/85"
+                    >
+                      {link.label}
+                    </a>
+                  ))}
 
-              <a
-                href="#tagesmenue"
-                onClick={closeMenu}
-                className="border-b border-white/10 px-4 py-4 text-sm font-medium text-white/80 hover:text-[#c9a96a]"
-              >
-                Tagesmenü
-              </a>
+                  {section === "restaurant" && (
+                    <a
+                      href="/restaurant#reservieren"
+                      onClick={closeMenu}
+                      className="mt-4 rounded-full bg-[#315c45] px-5 py-4 text-center text-sm font-bold uppercase tracking-wider text-white"
+                    >
+                      Tisch reservieren
+                    </a>
+                  )}
 
-              <a
-                href="#ueber-uns"
-                onClick={closeMenu}
-                className="border-b border-white/10 px-4 py-4 text-sm font-medium text-white/80 hover:text-[#c9a96a]"
-              >
-                Über uns
-              </a>
-
-              <a
-                href="#gastgarten"
-                onClick={closeMenu}
-                className="border-b border-white/10 px-4 py-4 text-sm font-medium text-white/80 hover:text-[#c9a96a]"
-              >
-                Gastgarten
-              </a>
-
-              <a
-                href="#kontakt"
-                onClick={closeMenu}
-                className="border-b border-white/10 px-4 py-4 text-sm font-medium text-white/80 hover:text-[#c9a96a]"
-              >
-                Kontakt
-              </a>
-
-              <a
-                href="#reservieren"
-                onClick={closeMenu}
-                className="mt-4 rounded-full bg-[#b08a4a] px-5 py-4 text-center text-sm font-bold uppercase tracking-wider text-white hover:bg-[#c49b58]"
-              >
-                Tisch reservieren
-              </a>
-
+                  {section === "hotel" && (
+                    <a
+                      href="/hotel#kontakt"
+                      onClick={closeMenu}
+                      className="mt-4 rounded-full bg-[#315c45] px-5 py-4 text-center text-sm font-bold uppercase tracking-wider text-white"
+                    >
+                      Anfrage stellen
+                    </a>
+                  )}
+                </>
+              )}
             </div>
-
           </div>
         )}
-
       </div>
     </header>
   );

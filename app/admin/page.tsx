@@ -1,137 +1,162 @@
-import LogoutButton from "@/components/LogoutButton";
+import Navbar from "@/components/Navbar";
 
-export default function AdminPage() {
-    return (
-        <main className="min-h-screen bg-[#f5f1e8] text-[#211f1b]">
+export default function Home() {
+  return (
+    <>
+      <Navbar section="home" />
 
-            {/* Header */}
-            <header className="border-b border-[#211f1b]/10 bg-[#211f1b] text-white">
-                <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-10">
+      <main className="bg-[#211f1b] text-[#f5f1e8]">
+        {/* HERO */}
+        <section className="relative min-h-screen overflow-hidden">
+          <div
+            className="absolute inset-0 bg-cover bg-center"
+            style={{
+              backgroundImage:
+                "url('https://www.altertelegraf.at/wp-content/uploads/2018/11/Alter-Telegraf-017-1024x682.jpg')",
+            }}
+          />
 
-                    <div>
-                        <p className="text-sm font-semibold tracking-[0.18em]">
-                            ALTER TELEGRAF
-                        </p>
+          <div className="absolute inset-0 bg-black/60" />
 
-                        <p className="mt-1 text-[10px] uppercase tracking-[0.3em] text-[#c9a96a]">
-                            Administration
-                        </p>
-                    </div>
+          <div className="absolute inset-0 bg-gradient-to-r from-[#211f1b]/95 via-[#211f1b]/65 to-[#211f1b]/25" />
 
-                    <div className="flex items-center gap-6">
-                        <a
-                            href="/"
-                            className="text-sm text-white/60 transition hover:text-white"
-                        >
-                            ← Website
-                        </a>
+          <div className="relative mx-auto flex min-h-screen max-w-7xl items-center px-6 py-32 lg:px-10">
+            <div className="w-full max-w-5xl">
+              <p className="mb-6 text-sm font-semibold uppercase tracking-[0.35em] text-[#d8c39a]">
+                Willkommen im Alten Telegraf
+              </p>
 
-                        <LogoutButton />
-                    </div>
+              <h1 className="max-w-4xl text-5xl leading-[0.95] sm:text-7xl lg:text-8xl">
+                Ein Ort.
+                <br />
+                <span className="italic text-[#d8c39a]">
+                  Zwei Erlebnisse.
+                </span>
+              </h1>
 
-                </div>
-            </header>
+              <p className="mt-8 max-w-2xl text-lg leading-8 text-white/80 sm:text-xl">
+                Restaurant und Hotel mitten in Graz. Entdecken Sie das
+                Hendl-Eck oder verbringen Sie Ihren Aufenthalt im Alten
+                Telegraf.
+              </p>
 
-            {/* Content */}
-            <div className="mx-auto max-w-7xl px-6 py-12 lg:px-10 lg:py-16">
+              {/* BEREICHE */}
+              <div className="mt-12 grid gap-5 sm:grid-cols-2">
+                {/* HENDL-ECK */}
+                <a
+                  href="/restaurant"
+                  className="group border border-white/20 bg-[#315c45]/90 p-8 backdrop-blur-sm transition duration-300 hover:bg-[#315c45]"
+                >
+                  <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#d8c39a]">
+                    Restaurant
+                  </p>
 
-                {/* Page heading */}
-                <div>
-                    <p className="text-sm font-bold uppercase tracking-[0.3em] text-[#b08a4a]">
-                        Dashboard
-                    </p>
+                  <h2 className="mt-4 text-3xl text-white">
+                    Hendl-Eck
+                  </h2>
 
-                    <h1 className="mt-3 text-4xl sm:text-5xl">
-                        Guten Tag.
-                    </h1>
+                  <p className="mt-3 max-w-sm text-sm leading-6 text-white/70">
+                    Traditionelle Küche, Hendl-Spezialitäten,
+                    Tagesempfehlungen und gemütlicher Gastgarten.
+                  </p>
 
-                    <p className="mt-4 max-w-2xl text-[#756f64]">
-                        Verwalten Sie hier die wichtigsten Inhalte Ihrer Website.
-                    </p>
-                </div>
+                  <span className="mt-7 inline-block text-sm font-semibold text-white">
+                    Zum Hendl-Eck →
+                  </span>
+                </a>
 
-                {/* Dashboard cards */}
-                <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {/* HOTEL */}
+                <a
+                  href="/hotel"
+                  className="group border border-white/20 bg-[#f5f1e8]/95 p-8 text-[#211f1b] backdrop-blur-sm transition duration-300 hover:bg-white"
+                >
+                  <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#315c45]">
+                    Übernachten
+                  </p>
 
-                    {/* Tagesmenü */}
-                    <a
-                        href="/admin/tagesmenue"
-                        className="group rounded-2xl border border-[#211f1b]/10 bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
-                    >
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#e9e2d5] text-xl">
-                            🍽️
-                        </div>
+                  <h2 className="mt-4 text-3xl">
+                    Hotel Alter Telegraf
+                  </h2>
 
-                        <h2 className="mt-6 text-2xl">
-                            Tagesmenü
-                        </h2>
+                  <p className="mt-3 max-w-sm text-sm leading-6 text-[#756f64]">
+                    Übernachten mitten in Graz und den Alten Telegraf
+                    als Ausgangspunkt für Ihren Aufenthalt entdecken.
+                  </p>
 
-                        <p className="mt-3 text-sm leading-6 text-[#756f64]">
-                            Tagesgerichte, Beschreibung und Preis verwalten.
-                        </p>
+                  <span className="mt-7 inline-block text-sm font-semibold text-[#315c45]">
+                    Zum Hotel →
+                  </span>
+                </a>
+              </div>
 
-                        <span className="mt-6 inline-block text-sm font-bold text-[#b08a4a]">
-                            Bearbeiten →
-                        </span>
-                    </a>
-
-                    {/* Speisekarte */}
-                    <div className="rounded-2xl border border-[#211f1b]/10 bg-white p-7 opacity-70 shadow-sm">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#e9e2d5] text-xl">
-                            📖
-                        </div>
-
-                        <h2 className="mt-6 text-2xl">
-                            Speisekarte
-                        </h2>
-
-                        <p className="mt-3 text-sm leading-6 text-[#756f64]">
-                            Gerichte, Kategorien und Preise verwalten.
-                        </p>
-
-                        <span className="mt-6 inline-block text-xs font-bold uppercase tracking-wider text-[#756f64]">
-                            Bald verfügbar
-                        </span>
-                    </div>
-
-                    {/* Website */}
-                    <a
-                        href="/"
-                        className="group rounded-2xl border border-[#211f1b]/10 bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
-                    >
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#e9e2d5] text-xl">
-                            🌐
-                        </div>
-
-                        <h2 className="mt-6 text-2xl">
-                            Website ansehen
-                        </h2>
-
-                        <p className="mt-3 text-sm leading-6 text-[#756f64]">
-                            Öffnen Sie die öffentliche Website.
-                        </p>
-
-                        <span className="mt-6 inline-block text-sm font-bold text-[#b08a4a]">
-                            Website öffnen →
-                        </span>
-                    </a>
-
-                </div>
-
-                {/* Info */}
-                <div className="mt-10 rounded-2xl border border-[#b08a4a]/20 bg-[#e9e2d5] p-6 sm:p-7">
-                    <p className="text-sm font-bold text-[#211f1b]">
-                        Einfach verwalten
-                    </p>
-
-                    <p className="mt-2 max-w-3xl text-sm leading-6 text-[#756f64]">
-                        Die Verwaltung wird bewusst einfach gehalten, damit Inhalte
-                        auch ohne technische Kenntnisse schnell geändert werden können.
-                    </p>
-                </div>
-
+              {/* INFO */}
+              <div className="mt-10 flex flex-wrap gap-x-8 gap-y-3 text-xs uppercase tracking-[0.2em] text-white/50">
+                <span>Grabenstraße 12 · 8010 Graz</span>
+                <span>Hendl-Eck · Hotel</span>
+              </div>
             </div>
+          </div>
+        </section>
 
-        </main>
-    );
+        {/* KURZER EINSTIEG */}
+        <section className="bg-[#f5f1e8] px-6 py-24 text-[#211f1b] lg:px-10 lg:py-32">
+          <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-2">
+            <a
+              href="/restaurant"
+              className="group border border-[#211f1b]/10 bg-[#e9e2d5] p-10 transition hover:border-[#315c45]"
+            >
+              <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#315c45]">
+                Hendl-Eck
+              </p>
+
+              <h2 className="mt-5 text-4xl">
+                Gute Küche.
+                <br />
+                <span className="italic text-[#315c45]">
+                  Gemütliches Wirtshaus.
+                </span>
+              </h2>
+
+              <p className="mt-6 leading-7 text-[#756f64]">
+                Werfen Sie einen Blick auf unsere Speisekarte,
+                entdecken Sie die aktuelle Tagesempfehlung oder
+                reservieren Sie direkt einen Tisch.
+              </p>
+
+              <span className="mt-8 inline-block font-semibold text-[#315c45]">
+                Restaurant entdecken →
+              </span>
+            </a>
+
+            <a
+              href="/hotel"
+              className="group border border-[#211f1b]/10 bg-[#315c45] p-10 text-white transition hover:bg-[#264936]"
+            >
+              <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#d8c39a]">
+                Hotel Alter Telegraf
+              </p>
+
+              <h2 className="mt-5 text-4xl">
+                Ankommen.
+                <br />
+                <span className="italic text-[#d8c39a]">
+                  Bleiben.
+                </span>
+              </h2>
+
+              <p className="mt-6 leading-7 text-white/70">
+                Informationen zu Zimmern, Aufenthalt und den
+                Leistungen des Hotels finden Sie im eigenständigen
+                Hotelbereich.
+              </p>
+
+              <span className="mt-8 inline-block font-semibold text-white">
+                Hotel entdecken →
+              </span>
+            </a>
+          </div>
+        </section>
+      </main>
+    </>
+  );
 }
