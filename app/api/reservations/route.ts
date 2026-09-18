@@ -5,8 +5,6 @@ import { db } from "@/prisma/db";
 
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 const availableTimes = [
     "11:30",
     "12:00",
@@ -320,7 +318,14 @@ export async function POST(request: Request) {
 
         const customerEmail = String(email).trim().toLowerCase();
 
-        await resend.emails.send({
+        const resendApiKey =
+            process.env.RESEND_API_KEY;
+
+        // Ohne Schlüssel wird keine Mail verschickt; die Reservierung bleibt gespeichert.
+        if (resendApiKey) {
+            const resend = new Resend(resendApiKey);
+
+            await resend.emails.send({
             from:
                 process.env.RESEND_FROM_EMAIL ||
                 "Hendl-Eck <onboarding@resend.dev>",
@@ -377,16 +382,14 @@ export async function POST(request: Request) {
             </p>
         </div>
     `,
-        });
+            });
+        }
 
         /*
          * -------------------------
          * E-Mail an Betreiber
          * -------------------------
          */
-
-        const resendApiKey =
-            process.env.RESEND_API_KEY;
 
         const notificationEmail =
             process.env.RESERVATION_NOTIFICATION_EMAIL;

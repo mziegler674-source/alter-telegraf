@@ -7,9 +7,7 @@ import { cookies } from "next/headers";
 import { db } from "@/prisma/db";
 import { verifySession } from "@/lib/auth";
 
-import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 const allowedStatuses = [
     "NEW",
