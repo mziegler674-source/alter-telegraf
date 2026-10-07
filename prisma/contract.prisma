@@ -1,4 +1,13 @@
 // use prisma-8
+//
+// HOTEL PMS V2
+// - Booking-ähnliche Zimmerkategorien
+// - 17 physische Zimmer
+// - Kalender auf Zimmer-Ebene
+// - saisonale Preise / Raten / Promotions
+// - Zahlung vor Ort + optionale Karten-Garantie über Payment Provider
+// - strukturierte Ausstattung je Zimmerkategorie
+// - mehrere Bilder je Zimmerkategorie, als Datei in der Datenbank
 
 model Restaurant {
   id        Int    @id @default(autoincrement())
@@ -6,10 +15,10 @@ model Restaurant {
   slug      String @unique
   createdAt DateTime @default(now())
 
-  users          User[]
-  dailyMenus     DailyMenu[]
-  menuTemplates  MenuTemplate[]
-  reservations   Reservation[]
+  users         User[]
+  dailyMenus    DailyMenu[]
+  menuTemplates MenuTemplate[]
+  reservations  Reservation[]
 }
 
 model User {
@@ -19,11 +28,7 @@ model User {
   role         String @default("employee")
 
   restaurantId Int
-  restaurant   Restaurant @relation(
-    fields: [restaurantId],
-    references: [id],
-    onDelete: Cascade
-  )
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 }
@@ -37,11 +42,7 @@ model DailyMenu {
   visible      Boolean @default(true)
 
   restaurantId Int
-  restaurant   Restaurant @relation(
-    fields: [restaurantId],
-    references: [id],
-    onDelete: Cascade
-  )
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
@@ -55,16 +56,20 @@ model MenuTemplate {
   price        String
 
   restaurantId Int
-  restaurant   Restaurant @relation(
-    fields: [restaurantId],
-    references: [id],
-    onDelete: Cascade
-  )
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 }
 
-model Reservation {
+// Zwei getrennte Karten: die Speisekarte im Haus und der Gaesteverkauf
+// zum Mitnehmen. Gleiche Struktur, getrennte Datensaetze und Preise.
+enum menu_kind {
+  @@type("pg/text@1")
+  SPEISEKARTE
+  GAESTEVERKAUF
+}
+
+model MenuItem {
   id Int @id @default(autoincrement())
 
   restaurantId Int
@@ -74,6 +79,55 @@ model Reservation {
     onDelete: Cascade
   )
 
+  menu        menu_kind
+  name        String
+  description String?
+  price       Numeric(10, 2)
+  active      Boolean @default(true)
+  sortOrder   Int     @default(0)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime?
+
+  @@index([restaurantId, menu, active, sortOrder])
+  @@check(expression: "\"price\" >= 0", name: "menuItem_price_nonneg")
+}
+
+// Die Speisekarten liegen als PDF vor. Die PDF ist die Quelle der Wahrheit
+// fuer Gerichte, Preise und Reihenfolge - nichts davon wird hier nachgebaut.
+// Die Datei liegt als bytea in der Datenbank: wenige, selten geaenderte
+// Dateien, dadurch kein zusaetzlicher Speicherdienst noetig und deploy-fest.
+model MenuCard {
+  id Int @id @default(autoincrement())
+
+  restaurantId Int
+  restaurant   Restaurant @relation(
+    fields: [restaurantId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  slug      String
+  title     String
+  sortOrder Int    @default(0)
+
+  fileName  String?
+  sizeBytes Int?
+  data      Bytes?
+
+  createdAt  DateTime  @default(now())
+  uploadedAt DateTime?
+
+  @@unique([restaurantId, slug])
+  @@index([restaurantId, sortOrder])
+}
+
+model Reservation {
+  id Int @id @default(autoincrement())
+
+  restaurantId Int
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
   firstName String
   lastName  String
   email     String
@@ -82,10 +136,8 @@ model Reservation {
   reservationDate DateTime
   reservationTime String
   guests          Int
-
-  message String?
-
-  status String @default("NEW")
+  message         String?
+  status          String @default("NEW")
 
   createdAt DateTime @default(now())
 
@@ -95,70 +147,109 @@ model Reservation {
 
 // =====================================================================
 // HOTEL-DOMÄNE
-// Eigenes Postgres-Schema `hotel`. Die Restaurant-Modelle oben stehen
-// ausserhalb jedes namespace-Blocks und bleiben damit in `public`.
 // =====================================================================
 
 enum booking_status {
   @@type("pg/text@1")
-  INQUIRY     = "INQUIRY"
-  PENDING     = "PENDING"
-  CONFIRMED   = "CONFIRMED"
-  CHECKED_IN  = "CHECKED_IN"
-  CHECKED_OUT = "CHECKED_OUT"
-  CANCELLED   = "CANCELLED"
-  NO_SHOW     = "NO_SHOW"
+  INQUIRY
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+  NO_SHOW
 }
 
 enum booking_source {
   @@type("pg/text@1")
-  WEBSITE     = "WEBSITE"
-  PHONE       = "PHONE"
-  EMAIL       = "EMAIL"
-  WALK_IN     = "WALK_IN"
-  MANUAL      = "MANUAL"
-  BOOKING_COM = "BOOKING_COM"
-  EXPEDIA     = "EXPEDIA"
-  AIRBNB      = "AIRBNB"
-  OTHER       = "OTHER"
+  WEBSITE
+  PHONE
+  EMAIL
+  WALK_IN
+  MANUAL
+  BOOKING_COM
+  EXPEDIA
+  AIRBNB
+  OTHER
 }
 
 enum pricing_mode {
   @@type("pg/text@1")
-  PER_ROOM   = "PER_ROOM"
-  PER_PERSON = "PER_PERSON"
+  PER_ROOM
+  PER_PERSON
 }
 
 enum meal_plan {
   @@type("pg/text@1")
-  ROOM_ONLY  = "ROOM_ONLY"
-  BREAKFAST  = "BREAKFAST"
-  HALF_BOARD = "HALF_BOARD"
-  FULL_BOARD = "FULL_BOARD"
+  ROOM_ONLY
+  BREAKFAST
+  HALF_BOARD
+  FULL_BOARD
 }
 
 enum service_unit {
   @@type("pg/text@1")
-  PER_STAY         = "PER_STAY"
-  PER_NIGHT        = "PER_NIGHT"
-  PER_DAY          = "PER_DAY"
-  PER_PERSON       = "PER_PERSON"
-  PER_PERSON_NIGHT = "PER_PERSON_NIGHT"
+  PER_STAY
+  PER_NIGHT
+  PER_DAY
+  PER_PERSON
+  PER_PERSON_NIGHT
 }
 
 enum room_status {
   @@type("pg/text@1")
-  CLEAN          = "CLEAN"
-  DIRTY          = "DIRTY"
-  INSPECTED      = "INSPECTED"
-  OUT_OF_SERVICE = "OUT_OF_SERVICE"
+  CLEAN
+  DIRTY
+  INSPECTED
+  OUT_OF_SERVICE
+}
+
+// Bettarten der physischen Zimmer. Die Werte bilden genau die real
+// vorhandenen Bettenlagen ab und sind vom Betreiber nicht editierbar.
+enum bed_type {
+  @@type("pg/text@1")
+  EINZELBETT
+  DOPPELBETT
+  ZWEI_EINZELBETTEN
+  DOPPELBETT_PLUS_ZWEI
+  DREI_BETTEN
 }
 
 enum cancellation_basis {
   @@type("pg/text@1")
-  PERCENT_OF_TOTAL = "PERCENT_OF_TOTAL"
-  FIRST_NIGHT      = "FIRST_NIGHT"
-  FIXED_AMOUNT     = "FIXED_AMOUNT"
+  PERCENT_OF_TOTAL
+  FIRST_NIGHT
+  FIXED_AMOUNT
+}
+
+enum promotion_type {
+  @@type("pg/text@1")
+  BASIC
+  EARLY_BOOKER
+  LAST_MINUTE
+}
+
+enum promotion_channel {
+  @@type("pg/text@1")
+  PUBLIC
+  MOBILE
+}
+
+enum payment_status {
+  @@type("pg/text@1")
+  NOT_REQUIRED
+  PENDING
+  VERIFIED
+  AUTHORIZED
+  CHARGED
+  FAILED
+  CANCELLED
+}
+
+enum payment_method {
+  @@type("pg/text@1")
+  PAY_AT_HOTEL
+  CARD_GUARANTEE
 }
 
 namespace hotel {
@@ -191,7 +282,7 @@ namespace hotel {
 
     defaultVatRate Numeric(5, 2)?
 
-    createdAt DateTime  @default(now())
+    createdAt DateTime @default(now())
     updatedAt DateTime?
 
     roomTypes RoomType[]
@@ -201,6 +292,7 @@ namespace hotel {
     bookings  Booking[]
     services  ServiceItem[]
     policies  CancellationPolicy[]
+    promotions Promotion[]
     users     HotelUser[]
   }
 
@@ -219,6 +311,10 @@ namespace hotel {
     @@index([hotelId])
   }
 
+  // Genau die drei öffentlich buchbaren Kategorien nach Booking:
+  // Einzelzimmer
+  // Doppelzimmer
+  // Doppelzimmer mit Schlafsofa
   model RoomType {
     id      Int   @id @default(autoincrement())
     hotelId Int
@@ -238,7 +334,7 @@ namespace hotel {
     sizeSqm           Int?
 
     pricingMode       pricing_mode @default(PER_ROOM)
-    breakfastIncluded Boolean      @default(true)
+    breakfastIncluded Boolean      @default(false)
 
     channelCode String?
     sortOrder   Int      @default(0)
@@ -251,13 +347,19 @@ namespace hotel {
     prices    RatePrice[]
     inventory Inventory[]
     bookedAs  BookingRoom[]
+    promotions PromotionRoomType[]
 
     @@unique([hotelId, code])
     @@unique([hotelId, slug])
     @@index([hotelId, active, sortOrder])
-    @@check(expression: "\"maxOccupancy\" >= \"standardOccupancy\" AND \"standardOccupancy\" >= 1", name: "roomType_occupancy_sane")
+    @@check(
+      expression: "\"maxOccupancy\" >= \"standardOccupancy\" AND \"standardOccupancy\" >= 1",
+      name: "roomType_occupancy_sane"
+    )
   }
 
+  // Physisches Zimmer im Hotel.
+  // Die konkrete Bettenkonfiguration bleibt pro Zimmer erhalten.
   model Room {
     id      Int   @id @default(autoincrement())
     hotelId Int
@@ -266,8 +368,20 @@ namespace hotel {
     roomTypeId Int
     roomType   RoomType @relation(fields: [roomTypeId], references: [id], onDelete: NoAction)
 
-    number    String
-    floor     Int?
+    number String
+    floor  Int?
+
+    // Bettart und tatsaechliche Belegungsgrenze des physischen Zimmers.
+    // Beides ist fix hinterlegt und wird im Admin nur angezeigt, nicht
+    // bearbeitet. Die Zuteilung muss maxOccupancy zwingend beachten: ein
+    // Doppelzimmer mit nur einem Einzelbett traegt keine zwei Personen.
+    bedType      bed_type
+    maxOccupancy Int
+
+    // Freitext aus V1. Bleibt vorerst erhalten, wird aber nicht mehr
+    // ausgewertet; ueber das Entfernen wird separat entschieden.
+    bedConfiguration String
+
     status    room_status @default(CLEAN)
     notes     String?
     active    Boolean     @default(true)
@@ -277,8 +391,12 @@ namespace hotel {
 
     @@unique([hotelId, number])
     @@index([roomTypeId, active])
+    @@index([roomTypeId, active, maxOccupancy])
+    @@check(expression: "\"maxOccupancy\" >= 1", name: "room_maxOccupancy_positive")
   }
 
+  // Ausstattungskatalog des Hauses. Strukturiert statt Freitext, damit die
+  // Merkmale auf der Zimmerkarte einzeln und einheitlich erscheinen.
   model Amenity {
     id      Int   @id @default(autoincrement())
     hotelId Int
@@ -305,19 +423,32 @@ namespace hotel {
     @@index([amenityId])
   }
 
+  // Zimmerfotos. Die Datei liegt wie die Speisekarten als bytea in der
+  // Datenbank: wenige, selten geaenderte Dateien, dadurch kein zusaetzlicher
+  // Speicherdienst und ueber Deployments hinweg bestaendig. Die Spalte url
+  // bleibt fuer extern gehostete Bilder erhalten und ist deshalb optional.
   model RoomTypeImage {
     id         Int      @id @default(autoincrement())
     roomTypeId Int
     roomType   RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
 
-    url       String
+    url       String?
     alt       String?
     sortOrder Int     @default(0)
     isPrimary Boolean @default(false)
 
+    fileName    String?
+    contentType String?
+    sizeBytes   Int?
+    data        Bytes?
+    uploadedAt  DateTime?
+
     @@index([roomTypeId, sortOrder])
+    @@index([roomTypeId, isPrimary])
   }
 
+  // Stornierungsrichtlinie des Hauses. Alle Werte sind Daten, keine
+  // Programmlogik: Der Betrieb pflegt Fristen und Saetze im Admin.
   model CancellationPolicy {
     id      Int   @id @default(autoincrement())
     hotelId Int
@@ -328,12 +459,27 @@ namespace hotel {
     description String?
     active      Boolean @default(true)
 
+    // Gebuehr bei Nichtanreise. Sie haengt an keiner Frist und steht deshalb
+    // hier und nicht in der Regelliste.
+    noShowFeePercent Numeric(5, 2)?
+
     rules     CancellationRule[]
     ratePlans RatePlan[]
 
     @@unique([hotelId, code])
+    @@check(
+      expression: "\"noShowFeePercent\" IS NULL OR (\"noShowFeePercent\" >= 0 AND \"noShowFeePercent\" <= 100)",
+      name: "cancellationPolicy_noShow_range"
+    )
   }
 
+  // Eine Regel greift, wenn bis zur Anreise weniger als
+  // `appliesFromDaysBefore` Tage verbleiben. Greifen mehrere Regeln, gilt
+  // die mit dem kleinsten Wert - also die, die der Anreise am naechsten
+  // liegt. Greift keine, ist die Stornierung kostenlos.
+  //
+  // Beispiel: eine Regel mit 3 Tagen und 100 % bedeutet
+  // "kostenlos bis 3 Tage vor Anreise, danach 100 %".
   model CancellationRule {
     id       Int                @id @default(autoincrement())
     policyId Int
@@ -345,7 +491,10 @@ namespace hotel {
     feeAmount             Numeric(10, 2)?
 
     @@unique([policyId, appliesFromDaysBefore])
-    @@check(expression: "\"feePercent\" IS NULL OR (\"feePercent\" >= 0 AND \"feePercent\" <= 100)", name: "cancellationRule_percent_range")
+    @@check(
+      expression: "\"feePercent\" IS NULL OR (\"feePercent\" >= 0 AND \"feePercent\" <= 100)",
+      name: "cancellationRule_percent_range"
+    )
   }
 
   model RatePlan {
@@ -356,15 +505,24 @@ namespace hotel {
     code        String
     name        String
     description String?
-    mealPlan    meal_plan @default(BREAKFAST)
+    mealPlan    meal_plan @default(ROOM_ONLY)
 
     minStay            Int?
     maxStay            Int?
     advanceBookingDays Int?
     discountPercent    Numeric(5, 2)?
 
+    // Für das aktuelle Hotel: Zahlung vor Ort.
+    // Bei cardGuaranteeRequired wird zusätzlich ein Payment Provider
+    // für die Karten-Garantie verwendet.
+    cardGuaranteeRequired Boolean @default(false)
+
     cancellationPolicyId Int?
-    cancellationPolicy   CancellationPolicy? @relation(fields: [cancellationPolicyId], references: [id], onDelete: SetNull)
+    cancellationPolicy   CancellationPolicy? @relation(
+      fields: [cancellationPolicyId],
+      references: [id],
+      onDelete: SetNull
+    )
 
     channelCode String?
     active      Boolean @default(true)
@@ -372,6 +530,7 @@ namespace hotel {
 
     prices       RatePrice[]
     bookingRooms BookingRoom[]
+    promotions   PromotionRatePlan[]
 
     @@unique([hotelId, code])
     @@index([hotelId, active])
@@ -384,16 +543,28 @@ namespace hotel {
     roomTypeId Int
     roomType   RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
 
-    date      Date
+    // Ohne Datum = Grundpreis, der fuer jeden Tag gilt. Mit Datum = Preis
+    // fuer genau diesen Tag, der den Grundpreis uebersteuert (Saisonpreise).
+    date      Date?
     occupancy Int
     amount    Numeric(10, 2)
 
     @@unique([ratePlanId, roomTypeId, date, occupancy])
+    // Postgres behandelt NULL in Unique-Constraints als verschieden, deshalb
+    // sichert ein Teilindex, dass es je Belegung nur einen Grundpreis gibt.
+    @@index(
+      [ratePlanId, roomTypeId, occupancy],
+      unique: true,
+      where: "\"date\" IS NULL",
+      name: "ratePrice_base_unique"
+    )
     @@index([roomTypeId, date])
     @@check(expression: "\"occupancy\" >= 1", name: "ratePrice_occupancy_positive")
     @@check(expression: "\"amount\" >= 0", name: "ratePrice_amount_nonneg")
   }
 
+  // Kategorie-Inventar für Website und spätere Channel-Anbindungen.
+  // Der eigentliche PMS-Kalender basiert zusätzlich auf den physischen Rooms.
   model Inventory {
     id         Int      @id @default(autoincrement())
     roomTypeId Int
@@ -409,7 +580,89 @@ namespace hotel {
 
     @@unique([roomTypeId, date])
     @@index([date])
-    @@check(expression: "\"booked\" >= 0 AND \"booked\" <= \"allotment\"", name: "inventory_booked_within_allotment")
+    @@check(
+      expression: "\"booked\" >= 0 AND \"booked\" <= \"allotment\"",
+      name: "inventory_booked_within_allotment"
+    )
+  }
+
+  model Promotion {
+    id      Int   @id @default(autoincrement())
+    hotelId Int
+    hotel   Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+    code        String
+    name        String
+    description String?
+
+    type          promotion_type
+    channel       promotion_channel @default(PUBLIC)
+    discountPercent Numeric(5, 2)
+
+    bookingFrom Date?
+    bookingTo   Date?
+    stayFrom    Date?
+    stayTo      Date?
+
+    minStayNights     Int?
+    earlyBookerDays   Int?
+    lastMinuteDays    Int?
+
+    active    Boolean  @default(true)
+    createdAt DateTime @default(now())
+    updatedAt DateTime?
+
+    roomTypes PromotionRoomType[]
+    ratePlans PromotionRatePlan[]
+
+    @@unique([hotelId, code])
+    @@index([hotelId, active])
+  }
+
+  model PromotionRoomType {
+    id          Int        @id @default(autoincrement())
+    promotionId Int
+    promotion   Promotion  @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+    roomTypeId  Int
+    roomType    RoomType   @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+
+    @@unique([promotionId, roomTypeId])
+    @@index([roomTypeId])
+  }
+
+  model PromotionRatePlan {
+    id          Int        @id @default(autoincrement())
+    promotionId Int
+    promotion   Promotion  @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+    ratePlanId  Int
+    ratePlan    RatePlan   @relation(fields: [ratePlanId], references: [id], onDelete: Cascade)
+
+    @@unique([promotionId, ratePlanId])
+    @@index([ratePlanId])
+  }
+
+  // Protokoll der verarbeiteten Anbieter-Ereignisse. Es dient allein der
+  // Idempotenz: Trifft ein Ereignis zweimal ein, wird es beim zweiten Mal
+  // erkannt und nicht erneut ausgefuehrt.
+  //
+  // Bewusst OHNE die Nutzdaten des Ereignisses. Ein Stripe-Objekt enthaelt
+  // Kartenmarke, letzte vier Stellen und das Ablaufdatum - Letzteres darf
+  // nach unserer Vorgabe nirgends gespeichert werden.
+  model PaymentEvent {
+    id Int @id @default(autoincrement())
+
+    provider  String
+    eventId   String
+    eventType String
+
+    bookingId Int?
+    booking   Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+    result      String?
+    processedAt DateTime @default(now())
+
+    @@unique([provider, eventId])
+    @@index([bookingId])
   }
 
   model Guest {
@@ -463,12 +716,12 @@ namespace hotel {
   model Booking {
     id      Int   @id @default(autoincrement())
     hotelId Int
-    hotel   Hotel @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+    hotel   Hotel @relation(fields: [hotelId], references: [id], onDelete: NoAction)
 
     bookingNumber String @unique
 
     guestId Int
-    guest   Guest @relation(fields: [guestId], references: [id], onDelete: Restrict)
+    guest   Guest @relation(fields: [guestId], references: [id], onDelete: NoAction)
 
     status booking_status @default(INQUIRY)
     source booking_source @default(WEBSITE)
@@ -478,13 +731,25 @@ namespace hotel {
 
     checkIn  Date
     checkOut Date
-    adults   Int  @default(1)
-    children Int  @default(0)
+    adults   Int @default(1)
+    children Int @default(0)
 
     currency      String          @default("EUR")
     roomsTotal    Numeric(10, 2)
     extrasTotal   Numeric(10, 2)
+    discountTotal Numeric(10, 2)
     totalAmount   Numeric(10, 2)
+
+    paymentStatus       payment_status @default(NOT_REQUIRED)
+    paymentMethod       payment_method @default(PAY_AT_HOTEL)
+    paymentProvider     String?
+    paymentCustomerRef  String?
+    paymentMethodRef    String?
+    paymentAuthorizedAt DateTime?
+    paymentChargedAt    DateTime?
+
+    // Bestandsfelder aus V1. Bewusst erhalten: ueber ihren Verbleib wird
+    // spaeter in einer eigenen Migration entschieden.
     depositDue    Numeric(10, 2)?
     depositPaidAt DateTime?
 
@@ -494,14 +759,16 @@ namespace hotel {
 
     guestMessage String?
     internalNote String?
-    createdAt    DateTime  @default(now())
+    createdAt    DateTime @default(now())
     updatedAt    DateTime?
 
-    rooms  BookingRoom[]
-    extras BookingExtra[]
+    rooms         BookingRoom[]
+    extras        BookingExtra[]
+    paymentEvents PaymentEvent[]
 
     @@unique([externalChannel, externalBookingId])
     @@index([hotelId, checkIn])
+    @@index([hotelId, checkOut])
     @@index([hotelId, status])
     @@check(expression: "\"checkOut\" > \"checkIn\"", name: "booking_dates_ordered")
   }
@@ -512,8 +779,10 @@ namespace hotel {
     booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
     roomTypeId Int
-    roomType   RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
+    roomType   RoomType @relation(fields: [roomTypeId], references: [id], onDelete: NoAction)
 
+    // Bei einer Online-Buchung zunächst optional.
+    // Das PMS weist danach ein konkretes physisches Zimmer zu.
     roomId Int?
     room   Room? @relation(fields: [roomId], references: [id], onDelete: SetNull)
 
@@ -525,7 +794,12 @@ namespace hotel {
     adults   Int @default(1)
     children Int @default(0)
 
+    // Vom Gast gewuenschte Bettart. Die Zuteilung eines konkreten Zimmers
+    // erfolgt spaeter im PMS und muss zu dieser Bettart passen.
+    bedType bed_type?
+
     pricingModeSnapshot pricing_mode
+    mealPlanSnapshot    meal_plan
     totalAmount         Numeric(10, 2)
 
     guestName String?
@@ -537,7 +811,7 @@ namespace hotel {
 
     @@index([bookingId])
     @@index([roomTypeId, checkIn, checkOut])
-    @@index([roomId, checkIn])
+    @@index([roomId, checkIn, checkOut])
     @@check(expression: "\"checkOut\" > \"checkIn\"", name: "bookingRoom_dates_ordered")
   }
 
@@ -561,7 +835,7 @@ namespace hotel {
     bookingRoom   BookingRoom @relation(fields: [bookingRoomId], references: [id], onDelete: Cascade)
 
     guestId Int
-    guest   Guest @relation(fields: [guestId], references: [id], onDelete: Restrict)
+    guest   Guest @relation(fields: [guestId], references: [id], onDelete: NoAction)
 
     isPrimary    Boolean   @default(false)
     isChild      Boolean   @default(false)
@@ -580,7 +854,7 @@ namespace hotel {
     bookingRoom   BookingRoom? @relation(fields: [bookingRoomId], references: [id], onDelete: Cascade)
 
     serviceItemId Int
-    serviceItem   ServiceItem @relation(fields: [serviceItemId], references: [id], onDelete: Restrict)
+    serviceItem   ServiceItem @relation(fields: [serviceItemId], references: [id], onDelete: NoAction)
 
     quantity     Int            @default(1)
     unitPrice    Numeric(10, 2)
@@ -591,5 +865,4 @@ namespace hotel {
     @@index([serviceItemId])
     @@check(expression: "\"quantity\" >= 1", name: "bookingExtra_quantity_positive")
   }
-
 }

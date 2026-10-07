@@ -1,0 +1,203 @@
+[
+  {
+    "id": "table.menuCard",
+    "label": "Create table \"menuCard\"",
+    "summary": "Creates table \"menuCard\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "menuCard"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"menuCard\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"menuCard\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"menuCard\"",
+        "sql": "CREATE TABLE \"public\".\"menuCard\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"data\" bytea,\n  \"fileName\" text,\n  \"id\" SERIAL NOT NULL,\n  \"restaurantId\" int4 NOT NULL,\n  \"sizeBytes\" int4,\n  \"slug\" text NOT NULL,\n  \"sortOrder\" int4 DEFAULT 0 NOT NULL,\n  \"title\" text NOT NULL,\n  \"uploadedAt\" timestamptz,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"menuCard\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"menuCard\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.menuCard.menuCard_restaurantId_slug_key",
+    "label": "Add unique constraint on \"menuCard\" (restaurantId, slug)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "menuCard_restaurantId_slug_key",
+        "table": "menuCard"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"menuCard_restaurantId_slug_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "menuCard_restaurantId_slug_key",
+          "public",
+          "\"public\".\"menuCard\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"menuCard_restaurantId_slug_key\"",
+        "sql": "ALTER TABLE \"public\".\"menuCard\" ADD CONSTRAINT \"menuCard_restaurantId_slug_key\" UNIQUE (\"restaurantId\", \"slug\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"menuCard_restaurantId_slug_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "menuCard_restaurantId_slug_key",
+          "public",
+          "\"public\".\"menuCard\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.menuCard.menuCard_restaurantId_idx_cf3ee7d0",
+    "label": "Create index \"menuCard_restaurantId_idx_cf3ee7d0\" on \"menuCard\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "menuCard_restaurantId_idx_cf3ee7d0",
+        "table": "menuCard"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"menuCard_restaurantId_idx_cf3ee7d0\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"menuCard_restaurantId_idx_cf3ee7d0\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"menuCard_restaurantId_idx_cf3ee7d0\"",
+        "sql": "CREATE INDEX \"menuCard_restaurantId_idx_cf3ee7d0\" ON \"public\".\"menuCard\" (\"restaurantId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"menuCard_restaurantId_idx_cf3ee7d0\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"menuCard_restaurantId_idx_cf3ee7d0\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.menuCard.menuCard_restaurantId_sortOrder_idx_6ecc974f",
+    "label": "Create index \"menuCard_restaurantId_sortOrder_idx_6ecc974f\" on \"menuCard\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "menuCard_restaurantId_sortOrder_idx_6ecc974f",
+        "table": "menuCard"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"menuCard_restaurantId_sortOrder_idx_6ecc974f\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"menuCard_restaurantId_sortOrder_idx_6ecc974f\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"menuCard_restaurantId_sortOrder_idx_6ecc974f\"",
+        "sql": "CREATE INDEX \"menuCard_restaurantId_sortOrder_idx_6ecc974f\" ON \"public\".\"menuCard\" (\"restaurantId\", \"sortOrder\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"menuCard_restaurantId_sortOrder_idx_6ecc974f\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"menuCard_restaurantId_sortOrder_idx_6ecc974f\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.menuCard.menuCard_restaurantId_fkey",
+    "label": "Add foreign key \"menuCard_restaurantId_fkey\" on \"menuCard\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "menuCard_restaurantId_fkey",
+        "table": "menuCard"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"menuCard_restaurantId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "menuCard_restaurantId_fkey",
+          "public",
+          "\"public\".\"menuCard\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"menuCard_restaurantId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"menuCard\"\nADD CONSTRAINT \"menuCard_restaurantId_fkey\"\nFOREIGN KEY (\"restaurantId\")\nREFERENCES \"public\".\"restaurant\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"menuCard_restaurantId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "menuCard_restaurantId_fkey",
+          "public",
+          "\"public\".\"menuCard\""
+        ]
+      }
+    ]
+  }
+]

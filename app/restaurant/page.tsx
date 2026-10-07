@@ -1,17 +1,22 @@
+import { DeliveryButtons } from "@/components/DeliveryLinks";
 import Navbar from "@/components/Navbar";
 import ReservationWidget from "@/components/ReservationWidget";
 import GoogleMap from "@/components/GoogleMap";
+import { MENU_CARDS } from "@/lib/menu/cards";
 import { db } from "@/prisma/db";
 
 export const dynamic = "force-dynamic";
 
 const dayNames: Record<number, string> = {
-  1: "Montag",
   2: "Dienstag",
   3: "Mittwoch",
   4: "Donnerstag",
   5: "Freitag",
+  6: "Samstag",
+  7: "Sonntag",
 };
+
+const displayedWeekdays = [2, 3, 4, 5, 6, 7];
 
 async function getDailyMenus() {
   const restaurant = await db.orm.public.Restaurant.first({
@@ -28,41 +33,33 @@ async function getDailyMenus() {
   }).all();
 }
 
-const menuHighlights = [
-  {
-    number: "01",
-    title: "Hendl-Spezialitäten",
-    text: "Knuspriges Hendl und ausgewählte Geflügelgerichte – das Herzstück unseres Hendl-Ecks.",
-  },
-  {
-    number: "02",
-    title: "Schnitzel & Klassiker",
-    text: "Österreichische Wirtshausklassiker, die seit Generationen zum guten Essen gehören.",
-  },
-  {
-    number: "03",
-    title: "Suppen & Salate",
-    text: "Frische Vorspeisen und Salate als leichter Einstieg oder Begleitung zu unseren Hauptgerichten.",
-  },
-  {
-    number: "04",
-    title: "Vegetarische Küche",
-    text: "Auch ohne Fleisch finden sich bei uns abwechslungsreiche Gerichte.",
-  },
-  {
-    number: "05",
-    title: "Hausgemachtes",
-    text: "Süße Klassiker und hausgemachte Strudel runden den Besuch bei uns ab.",
-  },
-  {
-    number: "06",
-    title: "Getränke",
-    text: "Vom erfrischenden Getränk bis zum gemütlichen Ausklang – passend zu Ihrem Besuch.",
-  },
-];
+// Die Kacheln entsprechen den sieben Karten des Hauses. Jede Kachel
+// verlinkt ihre PDF; ohne hinterlegte PDF bleibt sie nicht klickbar.
+async function getMenuCards() {
+  const restaurant = await db.orm.public.Restaurant.first({ slug: "alter-telegraf" });
+
+  const stored = restaurant
+    ? await db.orm.public.MenuCard
+        .where({ restaurantId: restaurant.id })
+        .select("slug", "fileName")
+        .all()
+    : [];
+
+  const withFile = new Set(
+    stored.filter((card) => card.fileName).map((card) => card.slug)
+  );
+
+  return MENU_CARDS.map((card, index) => ({
+    number: String(index + 1).padStart(2, "0"),
+    title: card.title,
+    text: card.teaser,
+    href: withFile.has(card.slug) ? `/karten/${card.slug}` : null,
+  }));
+}
 
 export default async function RestaurantPage() {
   const dailyMenus = await getDailyMenus();
+  const menuHighlights = await getMenuCards();
 
   return (
     <div className="bg-[#f5f1e8] text-[#211f1b]">
@@ -74,8 +71,8 @@ export default async function RestaurantPage() {
         ========================================================= */}
         <section className="relative flex min-h-screen items-end overflow-hidden bg-[#211f1b]">
           <img
-            src="https://www.altertelegraf.at/wp-content/uploads/2018/11/Alter-Telegraf-017-1024x682.jpg"
-            alt="Hendl-Eck Alter Telegraf in Graz"
+            src="/images/haus-strasse.jpg"
+            alt="Hendl-Eck Alter Telegraf an der Grabenstraße in Graz"
             className="absolute inset-0 h-full w-full object-cover"
           />
 
@@ -249,8 +246,8 @@ export default async function RestaurantPage() {
         ========================================================= */}
         <section className="relative h-[55vh] min-h-[420px] overflow-hidden">
           <img
-            src="https://www.altertelegraf.at/wp-content/uploads/2018/11/MG_3293ip-1024x681.jpg"
-            alt="Alter Telegraf"
+            src="/images/gastgarten-gedeckt.jpg"
+            alt="Gedeckter Tisch im Gastgarten des Alten Telegraf"
             className="absolute inset-0 h-full w-full object-cover"
           />
 
@@ -292,7 +289,7 @@ export default async function RestaurantPage() {
                   Unsere
                   <br />
                   <span className="italic text-[#d8c39a]">
-                    Speisekarte.
+                    Karten.
                   </span>
                 </h2>
 
@@ -302,40 +299,69 @@ export default async function RestaurantPage() {
                   vertraute Aromen und ehrliches Handwerk.
                 </p>
 
-                <a
-                  href="#reservieren"
-                  className="mt-9 inline-flex items-center gap-3 rounded-full border border-[#d8c39a]/50 px-6 py-3.5 text-xs font-bold uppercase tracking-[0.16em] text-[#d8c39a] transition hover:bg-[#d8c39a] hover:text-[#211f1b]"
-                >
-                  Tisch reservieren
-                  <span>→</span>
-                </a>
+                <div className="mt-9 flex flex-wrap gap-3">
+                  <a
+                    href="/restaurant/gaesteverkauf"
+                    className="inline-flex items-center gap-3 rounded-full bg-[#d8c39a] px-6 py-3.5 text-xs font-bold uppercase tracking-[0.16em] text-[#211f1b] transition hover:bg-[#e6d5b2]"
+                  >
+                    Gästeverkauf
+                    <span>→</span>
+                  </a>
+
+                  <a
+                    href="#reservieren"
+                    className="inline-flex items-center gap-3 rounded-full border border-[#d8c39a]/50 px-6 py-3.5 text-xs font-bold uppercase tracking-[0.16em] text-[#d8c39a] transition hover:bg-[#d8c39a] hover:text-[#211f1b]"
+                  >
+                    Tisch reservieren
+                    <span>→</span>
+                  </a>
+                </div>
               </div>
 
               <div className="grid border-t border-white/10 sm:grid-cols-2">
-                {menuHighlights.map((item) => (
-                  <div
-                    key={item.number}
-                    className="group border-b border-white/10 p-7 transition duration-300 hover:bg-white/[0.035] sm:p-9"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <span className="text-xs font-bold tracking-[0.25em] text-[#d8c39a]">
-                        {item.number}
-                      </span>
+                {menuHighlights.map((item) => {
+                  const inner = (
+                    <>
+                      <div className="flex items-start justify-between gap-4">
+                        <span className="text-xs font-bold tracking-[0.25em] text-[#d8c39a]">
+                          {item.number}
+                        </span>
 
-                      <span className="text-white/20 transition duration-300 group-hover:translate-x-1 group-hover:text-[#d8c39a]">
-                        ↗
-                      </span>
+                        <span className="text-white/20 transition duration-300 group-hover:translate-x-1 group-hover:text-[#d8c39a]">
+                          ↗
+                        </span>
+                      </div>
+
+                      <h3 className="mt-14 font-serif text-2xl text-[#f5f1e8] sm:text-3xl">
+                        {item.title}
+                      </h3>
+
+                      <p className="mt-4 text-sm leading-6 text-white/45">
+                        {item.text}
+                      </p>
+                    </>
+                  );
+
+                  const className =
+                    "group border-b border-white/10 p-7 transition duration-300 hover:bg-white/[0.035] sm:p-9";
+
+                  // Ohne hinterlegte PDF bleibt die Kachel wie bisher nicht klickbar.
+                  return item.href ? (
+                    <a
+                      key={item.number}
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={className}
+                    >
+                      {inner}
+                    </a>
+                  ) : (
+                    <div key={item.number} className={className}>
+                      {inner}
                     </div>
-
-                    <h3 className="mt-14 font-serif text-2xl text-[#f5f1e8] sm:text-3xl">
-                      {item.title}
-                    </h3>
-
-                    <p className="mt-4 text-sm leading-6 text-white/45">
-                      {item.text}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -380,6 +406,7 @@ export default async function RestaurantPage() {
                   <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#d8c39a]/50 text-[#d8c39a]">
                     ★
                   </div>
+
                   <p className="text-sm uppercase tracking-[0.14em] text-white/65">
                     Frisch & saisonal
                   </p>
@@ -389,7 +416,7 @@ export default async function RestaurantPage() {
 
             <div className="mt-16 overflow-hidden border border-white/15 bg-[#244936]/40 backdrop-blur-sm">
               <div className="divide-y divide-white/10">
-                {[1, 2, 3, 4, 5].map((weekday) => {
+                {displayedWeekdays.map((weekday) => {
                   const menu = dailyMenus.find(
                     (item) => item.weekday === weekday
                   );
@@ -624,7 +651,17 @@ export default async function RestaurantPage() {
             FOOTER
         ========================================================= */}
         <footer className="border-t border-white/10 bg-[#211f1b] px-6 pb-10 text-white/40 lg:px-10">
-          <div className="mx-auto flex max-w-7xl flex-col gap-6 pt-8 text-xs sm:flex-row sm:items-center sm:justify-between">
+          <div className="mx-auto max-w-7xl pt-10">
+            <p className="text-sm font-semibold uppercase tracking-wider text-white/50">
+              Online bestellen
+            </p>
+
+            <div className="mt-4">
+              <DeliveryButtons />
+            </div>
+          </div>
+
+          <div className="mx-auto mt-10 flex max-w-7xl flex-col gap-6 border-t border-white/10 pt-8 text-xs sm:flex-row sm:items-center sm:justify-between">
             <p>
               © {new Date().getFullYear()} Alter Telegraf · Hendl-Eck Graz
             </p>

@@ -17,7 +17,7 @@ import {
   readRequiredText,
   readSlug,
   readText,
-  requireAdmin,
+  requireHotelAdmin,
   requireHotel,
 } from "@/lib/hotel/admin-api";
 import { PRICING_MODES } from "@/lib/hotel/constants";
@@ -78,7 +78,7 @@ async function assertUnique(hotelId: number, code: string, slug: string, exceptI
 
 export async function GET() {
   return handle("Room types GET", async () => {
-    await requireAdmin();
+    await requireHotelAdmin();
 
     const hotel = await getHotel();
 
@@ -98,7 +98,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   return handle("Room types POST", async () => {
-    await requireAdmin();
+    await requireHotelAdmin();
     const hotel = await requireHotel();
 
     const data = parseRoomType(await readBody(request));
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   return handle("Room types PATCH", async () => {
-    await requireAdmin();
+    await requireHotelAdmin();
     const hotel = await requireHotel();
 
     const body = await readBody(request);
@@ -136,7 +136,7 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   return handle("Room types DELETE", async () => {
-    await requireAdmin();
+    await requireHotelAdmin();
     const hotel = await requireHotel();
 
     const id = readId(await readBody(request));
@@ -171,7 +171,6 @@ export async function DELETE(request: Request) {
       );
     }
 
-    // Ausstattungs-Zuordnungen sind reine Verknüpfungen und werden per Cascade entfernt.
     await db.orm.hotel.RoomType.where({ id, hotelId: hotel.id }).delete();
 
     return NextResponse.json({ success: true });

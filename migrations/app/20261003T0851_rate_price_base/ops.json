@@ -1,0 +1,84 @@
+[
+  {
+    "id": "alterNullability.dropNotNull.ratePrice.date",
+    "label": "Drop NOT NULL on \"ratePrice\".\"date\"",
+    "operationClass": "widening",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "column",
+        "name": "date",
+        "table": "ratePrice"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"date\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "ratePrice",
+          "date"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop NOT NULL on \"date\"",
+        "sql": "ALTER TABLE \"hotel\".\"ratePrice\" ALTER COLUMN \"date\" DROP NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"date\" is nullable",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "hotel",
+          "ratePrice",
+          "date",
+          "YES"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.ratePrice.ratePrice_base_unique_fa612b53",
+    "label": "Create index \"ratePrice_base_unique_fa612b53\" on \"ratePrice\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "ratePrice_base_unique_fa612b53",
+        "table": "ratePrice"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"ratePrice_base_unique_fa612b53\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"ratePrice_base_unique_fa612b53\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"ratePrice_base_unique_fa612b53\"",
+        "sql": "CREATE UNIQUE INDEX \"ratePrice_base_unique_fa612b53\" ON \"hotel\".\"ratePrice\" (\"ratePlanId\", \"roomTypeId\", \"occupancy\") WHERE (\"date\" IS NULL)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"ratePrice_base_unique_fa612b53\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"ratePrice_base_unique_fa612b53\""
+        ]
+      }
+    ]
+  }
+]

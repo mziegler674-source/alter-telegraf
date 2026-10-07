@@ -1,6 +1,37 @@
 import Navbar from "@/components/Navbar";
+import { RoomShowcase, type ShowcaseRoom } from "@/components/hotel/RoomPresentation";
+import { loadPublicRooms } from "@/lib/hotel/rooms";
 
-export default function HotelPage() {
+// Die Zimmerdaten pflegt der Betrieb im Admin. Ohne das waere die Seite
+// vorgerendert und Aenderungen erst beim naechsten Deploy sichtbar.
+export const dynamic = "force-dynamic";
+
+export default async function HotelPage() {
+  const rooms = await loadPublicRooms();
+
+  // Die Standardbelegung ist die Zahl, mit der die Kategorie beworben wird.
+  const showcase: ShowcaseRoom[] = rooms.map((room) => ({
+    roomTypeId: room.roomTypeId,
+    name: room.name,
+    shortDescription: room.shortDescription,
+    description: room.description,
+    sizeSqm: room.sizeSqm,
+    persons: room.fromOccupancy ?? room.standardOccupancy,
+    maxOccupancy: room.maxOccupancy,
+    images: room.images,
+    amenities: room.amenities,
+    bedTypes: room.bedTypes.map(({ bedType, label }) => ({ bedType, label })),
+    price: room.fromPrice,
+    priceIsFrom: true,
+  }));
+
+  // Ausstattung, die in allen gezeigten Kategorien vorhanden ist.
+  const sharedAmenities = showcase.length
+    ? showcase[0].amenities.filter((amenity) =>
+        showcase.every((room) => room.amenities.some((own) => own.code === amenity.code))
+      )
+    : [];
+
   return (
     <>
       <Navbar section="hotel" />
@@ -11,8 +42,7 @@ export default function HotelPage() {
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
-              backgroundImage:
-                "url('https://www.altertelegraf.at/wp-content/uploads/2018/11/MG_3293ip-1024x681.jpg')",
+              backgroundImage: "url('/images/haus-fassade.jpg')",
             }}
           />
 
@@ -48,10 +78,10 @@ export default function HotelPage() {
                 </a>
 
                 <a
-                  href="#kontakt"
+                  href="/hotel/buchen"
                   className="rounded-full border border-white/40 bg-white/5 px-7 py-4 text-center text-sm font-bold uppercase tracking-wider text-white backdrop-blur-sm transition hover:bg-white/10"
                 >
-                  Aufenthalt anfragen
+                  Zimmer buchen
                 </a>
               </div>
             </div>
@@ -160,58 +190,40 @@ export default function HotelPage() {
               </h2>
 
               <p className="mt-7 text-lg leading-8 text-[#756f64]">
-                Die Zimmer werden hier mit ihren tatsächlichen
-                Informationen, Bildern, Ausstattungsmerkmalen und
-                Preisen vorgestellt.
+                {showcase.length > 0
+                  ? "Alle Zimmer verfügen über dieselbe Standardausstattung. Wählen Sie die Kategorie, die zu Ihrem Aufenthalt passt."
+                  : "Die Zimmerdaten werden derzeit eingepflegt."}
               </p>
             </div>
 
-            <div className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              <div className="min-h-[260px] border border-[#211f1b]/10 bg-[#f5f1e8] p-8">
-                <span className="text-xs font-bold uppercase tracking-[0.3em] text-[#315c45]">
-                  Zimmer
-                </span>
+            <div className="mt-14">
+              {showcase.length > 0 ? (
+                <RoomShowcase rooms={showcase} />
+              ) : (
+                <div className="border border-[#211f1b]/10 bg-[#f5f1e8] p-8">
+                  <h3 className="text-2xl">Zimmer folgen</h3>
 
-                <h3 className="mt-16 text-2xl">
-                  Informationen folgen
-                </h3>
-
-                <p className="mt-4 leading-7 text-[#756f64]">
-                  Die konkreten Zimmerdaten werden nach Rücksprache
-                  mit dem Betreiber eingepflegt.
-                </p>
-              </div>
-
-              <div className="min-h-[260px] border border-[#211f1b]/10 bg-[#f5f1e8] p-8">
-                <span className="text-xs font-bold uppercase tracking-[0.3em] text-[#315c45]">
-                  Ausstattung
-                </span>
-
-                <h3 className="mt-16 text-2xl">
-                  Komfort & Aufenthalt
-                </h3>
-
-                <p className="mt-4 leading-7 text-[#756f64]">
-                  Hier werden später die tatsächlichen
-                  Ausstattungsmerkmale dargestellt.
-                </p>
-              </div>
-
-              <div className="min-h-[260px] border border-[#211f1b]/10 bg-[#f5f1e8] p-8">
-                <span className="text-xs font-bold uppercase tracking-[0.3em] text-[#315c45]">
-                  Anfrage
-                </span>
-
-                <h3 className="mt-16 text-2xl">
-                  Aufenthalt planen
-                </h3>
-
-                <p className="mt-4 leading-7 text-[#756f64]">
-                  Informationen zur Anfrage und späteren
-                  Hotelbuchung werden hier integriert.
-                </p>
-              </div>
+                  <p className="mt-4 leading-7 text-[#756f64]">
+                    Für Ihre Anfrage erreichen Sie uns unter{" "}
+                    <a href="tel:+43316686558" className="underline">
+                      +43 316 686558
+                    </a>
+                    .
+                  </p>
+                </div>
+              )}
             </div>
+
+            {showcase.length > 0 && (
+              <div className="mt-12 text-center">
+                <a
+                  href="/hotel/buchen"
+                  className="inline-block rounded-full bg-[#211f1b] px-8 py-4 text-sm font-bold uppercase tracking-wider text-white transition hover:bg-[#3a3630]"
+                >
+                  Verfügbarkeit prüfen
+                </a>
+              </div>
+            )}
           </div>
         </section>
 
@@ -235,16 +247,32 @@ export default function HotelPage() {
               </h2>
 
               <p className="mt-8 max-w-xl text-lg leading-8 text-[#756f64]">
-                Dieser Bereich wird mit den echten Informationen
-                des Hotels ergänzt, sobald wir diese vom Betreiber
-                erhalten.
+                {sharedAmenities.length > 0
+                  ? "Diese Ausstattung finden Sie in jedem unserer Zimmer."
+                  : "Die Ausstattungsmerkmale werden derzeit eingepflegt."}
               </p>
+
+              {sharedAmenities.length > 0 && (
+                <ul className="mt-8 grid max-w-xl gap-x-8 gap-y-3 sm:grid-cols-2">
+                  {sharedAmenities.map((amenity) => (
+                    <li
+                      key={amenity.code}
+                      className="flex items-center gap-3 border-b border-[#211f1b]/10 pb-3 text-lg"
+                    >
+                      <span className="text-[#315c45]" aria-hidden>
+                        &#10003;
+                      </span>
+                      {amenity.name}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             <div className="overflow-hidden">
               <img
-                src="https://www.altertelegraf.at/wp-content/uploads/2018/11/ip_MG_9708h-1024x683.jpg"
-                alt="Alter Telegraf in Graz"
+                src="/images/hotel-flur.jpg"
+                alt="Flur im Hotel Alter Telegraf mit Wegweiser zu den Zimmern"
                 className="h-[420px] w-full object-cover"
               />
             </div>

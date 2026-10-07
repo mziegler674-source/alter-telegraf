@@ -1,3 +1,4 @@
+import { DeliveryButtons } from "@/components/DeliveryLinks";
 import Navbar from "@/components/Navbar";
 
 export default function Home() {
@@ -7,13 +8,12 @@ export default function Home() {
 
       <main className="bg-[#f5f1e8] text-[#211f1b]">
         {/* HERO */}
-        <section className="relative overflow-hidden bg-[#211f1b]">
+        <section className="relative min-h-[100svh] overflow-hidden bg-[#211f1b]">
           {/* Background image */}
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
-              backgroundImage:
-                "url('https://www.altertelegraf.at/wp-content/uploads/2018/11/Alter-Telegraf-017-1024x682.jpg')",
+              backgroundImage: "url('/images/haus-frontal.jpg')",
             }}
           />
 
@@ -21,31 +21,63 @@ export default function Home() {
           <div className="absolute inset-0 bg-black/55" />
 
           {/* Warm gradient */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[#211f1b]/15 via-[#211f1b]/35 to-[#211f1b]/95" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#211f1b]/10 via-[#211f1b]/35 to-[#211f1b]/95" />
 
-          <div className="relative mx-auto max-w-7xl px-4 pt-24 sm:px-8 sm:pt-28 lg:px-10 lg:pt-36">
+          {/* Hero content */}
+          <div className="relative mx-auto flex min-h-[100svh] max-w-7xl flex-col px-4 pt-24 sm:px-8 sm:pt-28 lg:px-10 lg:pt-32">
+            {/* Main hero text */}
+            <div
+              className="
+                flex
+                flex-1
+                flex-col
+                items-center
+                justify-center
+                text-center
 
-            {/* HERO CONTENT */}
-            <div className="flex flex-col items-center justify-center text-center
-      min-h-[360px] pb-8
-      sm:min-h-[540px] sm:pb-16
-      lg:min-h-[600px] lg:pb-24"
+                pb-8
+                sm:pb-10
+                lg:pb-12
+
+                max-[800px]:justify-center
+                max-[800px]:pb-6
+              "
             >
-              <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.28em] text-[#d8c39a] sm:mb-6 sm:text-sm sm:tracking-[0.35em]">
+              <p
+                className="
+                  mb-4
+                  text-[9px]
+                  font-bold
+                  uppercase
+                  tracking-[0.25em]
+                  text-[#d8c39a]
+
+                  sm:mb-5
+                  sm:text-xs
+                  sm:tracking-[0.32em]
+
+                  lg:mb-6
+                  lg:text-sm
+                  lg:tracking-[0.35em]
+                "
+              >
                 Seit über 80 Jahren in Graz
               </p>
 
               <h1
                 className="
-          max-w-[950px]
-          font-serif
-          text-[3rem]
-          leading-[0.92]
-          text-[#f5f1e8]
-          sm:text-6xl
-          md:text-7xl
-          lg:text-8xl
-        "
+                  max-w-[950px]
+                  font-serif
+                  text-[2.65rem]
+                  leading-[0.92]
+                  text-[#f5f1e8]
+
+                  sm:text-6xl
+                  md:text-7xl
+                  lg:text-8xl
+
+                  max-[800px]:text-[2.7rem]
+                "
               >
                 Hendl-Eck
                 <br />
@@ -56,16 +88,24 @@ export default function Home() {
 
               <p
                 className="
-          mt-5
-          max-w-[650px]
-          text-sm
-          leading-6
-          text-white/80
-          sm:mt-8
-          sm:text-lg
-          sm:leading-8
-          lg:text-xl
-        "
+                  mt-5
+                  max-w-[650px]
+                  text-sm
+                  leading-6
+                  text-white/80
+
+                  sm:mt-6
+                  sm:text-base
+                  sm:leading-7
+
+                  lg:mt-8
+                  lg:text-xl
+                  lg:leading-8
+
+                  max-[800px]:mt-4
+                  max-[800px]:text-[13px]
+                  max-[800px]:leading-5
+                "
               >
                 Traditionelles Grazer Wirtshaus mit Gastgarten – und gemütliche
                 Zimmer zum Übernachten, mitten in der Grabenstraße.
@@ -73,42 +113,116 @@ export default function Home() {
             </div>
 
             {/* RESTAURANT / HOTEL */}
-            <div className="grid grid-cols-1 overflow-hidden border-t border-white/10 sm:grid-cols-2">
+            <div
+              className="
+                grid
+                grid-cols-2
+                overflow-hidden
+                border-t
+                border-white/10
 
+                shrink-0
+              "
+            >
               {/* RESTAURANT */}
               <a
                 href="/restaurant"
                 className="
-          group
-          border-b border-white/10
-          bg-[#211f1b]/90
-          px-4
-          py-6
-          sm:border-b-0
-          sm:border-r
-          backdrop-blur-md
-          transition
-          duration-300
-          hover:bg-[#315c45]/90
-          sm:px-7
-          sm:py-9
-          lg:px-10
-          lg:py-10
-        "
+                  group
+                  border-r
+                  border-white/10
+                  bg-[#211f1b]/90
+                  px-4
+                  py-5
+                  backdrop-blur-md
+                  transition
+                  duration-300
+                  hover:bg-[#315c45]/90
+
+                  sm:px-7
+                  sm:py-7
+
+                  lg:px-10
+                  lg:py-9
+
+                  max-[800px]:px-3
+                  max-[800px]:py-4
+                "
               >
-                <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-[#d8c39a] sm:text-xs sm:tracking-[0.3em]">
+                <p
+                  className="
+                    text-[8px]
+                    font-bold
+                    uppercase
+                    tracking-[0.22em]
+                    text-[#d8c39a]
+
+                    sm:text-xs
+                    sm:tracking-[0.3em]
+
+                    max-[800px]:text-[8px]
+                  "
+                >
                   Restaurant
                 </p>
 
-                <h2 className="mt-1 font-serif text-xl text-white sm:mt-2 sm:text-3xl lg:text-4xl">
+                <h2
+                  className="
+                    mt-1
+                    font-serif
+                    text-lg
+                    text-white
+
+                    sm:mt-2
+                    sm:text-3xl
+
+                    lg:text-4xl
+
+                    max-[800px]:text-[1.15rem]
+                  "
+                >
                   Hendl-Eck
                 </h2>
 
-                <p className="mt-2 max-w-sm text-[13px] leading-5 text-white/60 sm:text-sm sm:leading-6">
-                  Speisekarte, Tagesempfehlung und Tischreservierung.
+                <p
+                  className="
+                    mt-2
+                    max-w-sm
+                    text-[11px]
+                    leading-4
+                    text-white/60
+
+                    sm:text-sm
+                    sm:leading-6
+
+                    max-[800px]:text-[10px]
+                    max-[800px]:leading-4
+                  "
+                >
+                  <span className="sm:hidden">
+                    Speisekarte & Reservierung
+                  </span>
+
+                  <span className="hidden sm:inline">
+                    Speisekarte, Tagesempfehlung und Tischreservierung.
+                  </span>
                 </p>
 
-                <span className="mt-4 inline-flex text-[11px] font-semibold text-[#d8c39a] sm:mt-5 sm:text-sm">
+                <span
+                  className="
+                    mt-3
+                    inline-flex
+                    text-[10px]
+                    font-semibold
+                    text-[#d8c39a]
+
+                    sm:mt-5
+                    sm:text-sm
+
+                    max-[800px]:mt-3
+                    max-[800px]:text-[10px]
+                  "
+                >
                   Zum Restaurant →
                 </span>
               </a>
@@ -117,33 +231,99 @@ export default function Home() {
               <a
                 href="/hotel"
                 className="
-          group
-          bg-[#211f1b]/90
-          px-4
-          py-6
-          backdrop-blur-md
-          transition
-          duration-300
-          hover:bg-[#315c45]/90
-          sm:px-7
-          sm:py-9
-          lg:px-10
-          lg:py-10
-        "
+                  group
+                  bg-[#211f1b]/90
+                  px-4
+                  py-5
+                  backdrop-blur-md
+                  transition
+                  duration-300
+                  hover:bg-[#315c45]/90
+
+                  sm:px-7
+                  sm:py-7
+
+                  lg:px-10
+                  lg:py-9
+
+                  max-[800px]:px-3
+                  max-[800px]:py-4
+                "
               >
-                <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-[#d8c39a] sm:text-xs sm:tracking-[0.3em]">
+                <p
+                  className="
+                    text-[8px]
+                    font-bold
+                    uppercase
+                    tracking-[0.22em]
+                    text-[#d8c39a]
+
+                    sm:text-xs
+                    sm:tracking-[0.3em]
+
+                    max-[800px]:text-[8px]
+                  "
+                >
                   Hotel
                 </p>
 
-                <h2 className="mt-1 font-serif text-xl text-white sm:mt-2 sm:text-3xl lg:text-4xl">
+                <h2
+                  className="
+                    mt-1
+                    font-serif
+                    text-lg
+                    text-white
+
+                    sm:mt-2
+                    sm:text-3xl
+
+                    lg:text-4xl
+
+                    max-[800px]:text-[1.15rem]
+                  "
+                >
                   Alter Telegraf
                 </h2>
 
-                <p className="mt-2 max-w-sm text-[13px] leading-5 text-white/60 sm:text-sm sm:leading-6">
-                  Zimmer, Ausstattung und Aufenthalt anfragen.
+                <p
+                  className="
+                    mt-2
+                    max-w-sm
+                    text-[11px]
+                    leading-4
+                    text-white/60
+
+                    sm:text-sm
+                    sm:leading-6
+
+                    max-[800px]:text-[10px]
+                    max-[800px]:leading-4
+                  "
+                >
+                  <span className="sm:hidden">
+                    Zimmer & Aufenthalt
+                  </span>
+
+                  <span className="hidden sm:inline">
+                    Zimmer, Ausstattung und Aufenthalt anfragen.
+                  </span>
                 </p>
 
-                <span className="mt-4 inline-flex text-[11px] font-semibold text-[#d8c39a] sm:mt-5 sm:text-sm">
+                <span
+                  className="
+                    mt-3
+                    inline-flex
+                    text-[10px]
+                    font-semibold
+                    text-[#d8c39a]
+
+                    sm:mt-5
+                    sm:text-sm
+
+                    max-[800px]:mt-3
+                    max-[800px]:text-[10px]
+                  "
+                >
                   Zum Hotel →
                 </span>
               </a>
@@ -245,14 +425,24 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="mt-12 border-t border-white/10 pt-6">
+            <div className="mt-12 border-t border-white/10 pt-8">
+              <p className="text-sm font-semibold uppercase tracking-wider text-white/50">
+                Online bestellen
+              </p>
+
+              <div className="mt-4">
+                <DeliveryButtons />
+              </div>
+            </div>
+
+            <div className="mt-10 border-t border-white/10 pt-6">
               <p className="text-sm text-white/40">
                 © {new Date().getFullYear()} Alter Telegraf · Hendl-Eck Graz
               </p>
             </div>
           </div>
         </footer>
-      </main >
+      </main>
     </>
   );
 }

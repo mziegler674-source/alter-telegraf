@@ -1,0 +1,86 @@
+[
+  {
+    "id": "column.hotel.cancellationPolicy.noShowFeePercent",
+    "label": "Add column \"noShowFeePercent\" to \"cancellationPolicy\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "column",
+        "name": "noShowFeePercent",
+        "table": "cancellationPolicy"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"noShowFeePercent\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "cancellationPolicy",
+          "noShowFeePercent"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"noShowFeePercent\"",
+        "sql": "ALTER TABLE \"hotel\".\"cancellationPolicy\" ADD COLUMN \"noShowFeePercent\" numeric(5,2)"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"noShowFeePercent\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "cancellationPolicy",
+          "noShowFeePercent"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "checkConstraint.cancellationPolicy.cancellationPolicy_noShow_range_41e91451",
+    "label": "Add check constraint \"cancellationPolicy_noShow_range_41e91451\" on \"cancellationPolicy\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "checkConstraint",
+        "name": "cancellationPolicy_noShow_range_41e91451",
+        "table": "cancellationPolicy"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"cancellationPolicy_noShow_range_41e91451\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "cancellationPolicy_noShow_range_41e91451",
+          "hotel",
+          "\"hotel\".\"cancellationPolicy\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"cancellationPolicy_noShow_range_41e91451\"",
+        "sql": "ALTER TABLE \"hotel\".\"cancellationPolicy\" ADD CONSTRAINT \"cancellationPolicy_noShow_range_41e91451\" CHECK (\"noShowFeePercent\" IS NULL OR (\"noShowFeePercent\" >= 0 AND \"noShowFeePercent\" <= 100))"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"cancellationPolicy_noShow_range_41e91451\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "cancellationPolicy_noShow_range_41e91451",
+          "hotel",
+          "\"hotel\".\"cancellationPolicy\""
+        ]
+      }
+    ]
+  }
+]

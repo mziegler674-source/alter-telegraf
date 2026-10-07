@@ -7,14 +7,14 @@ import {
   handle,
   readBody,
   readId,
-  requireAdmin,
+  requireHotelAdmin,
   requireHotel,
 } from "@/lib/hotel/admin-api";
 import { db } from "@/prisma/db";
 
 export async function PUT(request: Request) {
   return handle("Amenity assignment PUT", async () => {
-    await requireAdmin();
+    await requireHotelAdmin();
     const hotel = await requireHotel();
 
     const body = await readBody(request);

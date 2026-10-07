@@ -13,7 +13,7 @@ import {
   readSlug,
   readText,
   readTime,
-  requireAdmin,
+  requireHotelAdmin,
 } from "@/lib/hotel/admin-api";
 import { db } from "@/prisma/db";
 
@@ -70,7 +70,7 @@ function parseHotel(body: Body) {
 
 export async function GET() {
   return handle("Hotel settings GET", async () => {
-    await requireAdmin();
+    await requireHotelAdmin();
 
     return NextResponse.json({ hotel: await getHotel() });
   });
@@ -78,7 +78,7 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   return handle("Hotel settings PUT", async () => {
-    await requireAdmin();
+    await requireHotelAdmin();
 
     const data = parseHotel(await readBody(request));
     const existing = await getHotel();

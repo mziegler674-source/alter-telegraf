@@ -23,17 +23,21 @@ export const PRICING_MODE_LABELS: Record<PricingMode, string> = {
   PER_PERSON: "Pro Person",
 };
 
-// Laut alter Website in allen Zimmern (WLAN, SAT-TV, Klima, Bad/WC, Föhn),
-// teilweise Safe, vereinzelt Balkon.
-export const EXAMPLE_AMENITIES = [
-  { code: "WLAN", name: "WLAN", sortOrder: 10 },
-  { code: "SAT_TV", name: "SAT-TV", sortOrder: 20 },
-  { code: "KLIMA", name: "Klimaanlage", sortOrder: 30 },
-  { code: "BAD_WC", name: "Bad/WC", sortOrder: 40 },
-  { code: "FOEHN", name: "Föhn", sortOrder: 50 },
-  { code: "SAFE", name: "Safe", sortOrder: 60 },
-  { code: "BALKON", name: "Balkon", sortOrder: 70 },
+// Ausstattungsmerkmale, die der Betrieb auf altertelegraf.at/zimmer für
+// ALLE Zimmer angibt: „Wlan, SAT / TV, Klima, Bad / Wc, Föhn“. Mehr ist dort
+// nicht belegt, deshalb steht hier auch nichts weiter. Der Zimmersafe ist nur
+// für einen Teil der Zimmer erwähnt und wird daher nicht automatisch
+// zugeordnet. Gepflegt wird der Katalog anschließend im Admin.
+export const CONFIRMED_AMENITIES = [
+  { code: "WLAN", name: "WLAN", icon: "wlan", sortOrder: 10, allRooms: true },
+  { code: "SAT_TV", name: "SAT-TV", icon: "tv", sortOrder: 20, allRooms: true },
+  { code: "KLIMA", name: "Klimaanlage", icon: "klima", sortOrder: 30, allRooms: true },
+  { code: "BAD_WC", name: "Bad/WC", icon: "bad", sortOrder: 40, allRooms: true },
+  { code: "FOEHN", name: "Föhn", icon: "foehn", sortOrder: 50, allRooms: true },
+  { code: "SAFE", name: "Zimmersafe", icon: "safe", sortOrder: 60, allRooms: false },
 ] as const;
+
+export type AmenityCode = (typeof CONFIRMED_AMENITIES)[number]["code"];
 
 // Nur Werte, die für das Hotel belegt sind. Alles andere bleibt leer.
 export const ALTER_TELEGRAF_DEFAULTS = {
@@ -64,10 +68,12 @@ export const HOTEL_NAV = [
   { href: "/admin/hotel/zimmerarten", label: "Zimmerarten", ready: true },
   { href: "/admin/hotel/zimmer", label: "Zimmer", ready: true },
   { href: "/admin/hotel/ausstattung", label: "Ausstattung", ready: true },
-  { href: "/admin/hotel/buchungen", label: "Buchungen", ready: false },
+  { href: "/admin/hotel/preise", label: "Preise", ready: true },
+  { href: "/admin/hotel/stornobedingungen", label: "Stornobedingungen", ready: true },
+  { href: "/admin/hotel/promotions", label: "Promotions", ready: false },
+  { href: "/admin/hotel/buchungen", label: "Buchungen", ready: true },
   { href: "/admin/hotel/gaeste", label: "Gäste", ready: false },
   { href: "/admin/hotel/kalender", label: "Kalender", ready: false },
-  { href: "/admin/hotel/preise", label: "Preise", ready: false },
 ] as const;
 
 export const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;

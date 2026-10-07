@@ -8,11 +8,12 @@ import { db } from "@/prisma/db";
 import { verifySession } from "@/lib/auth";
 
 const dayNumbers: Record<string, number> = {
-    Montag: 1,
     Dienstag: 2,
     Mittwoch: 3,
     Donnerstag: 4,
     Freitag: 5,
+    Samstag: 6,
+    Sonntag: 7,
 };
 
 export async function POST(request: Request) {

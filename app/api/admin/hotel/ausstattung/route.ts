@@ -13,10 +13,10 @@ import {
   readInt,
   readRequiredText,
   readText,
-  requireAdmin,
+  requireHotelAdmin,
   requireHotel,
 } from "@/lib/hotel/admin-api";
-import { EXAMPLE_AMENITIES } from "@/lib/hotel/constants";
+import { CONFIRMED_AMENITIES } from "@/lib/hotel/constants";
 import { db } from "@/prisma/db";
 
 function parseAmenity(body: Body) {
@@ -38,7 +38,7 @@ async function assertCodeFree(hotelId: number, code: string, exceptId?: number) 
 
 export async function GET() {
   return handle("Amenities GET", async () => {
-    await requireAdmin();
+    await requireHotelAdmin();
 
     const hotel = await getHotel();
 
@@ -72,7 +72,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   return handle("Amenities POST", async () => {
-    await requireAdmin();
+    await requireHotelAdmin();
     const hotel = await requireHotel();
 
     const body = await readBody(request);
@@ -83,11 +83,13 @@ export async function POST(request: Request) {
         .select("code")
         .all();
       const existingCodes = new Set(existing.map((a) => a.code));
-      const missing = EXAMPLE_AMENITIES.filter((a) => !existingCodes.has(a.code));
+      // Nur die Merkmale, die der Betrieb selbst angibt. `allRooms` steuert
+      // lediglich die Zuordnung im Seed und ist keine Spalte.
+      const missing = CONFIRMED_AMENITIES.filter((a) => !existingCodes.has(a.code));
 
       await db.transaction(async (tx) => {
-        for (const amenity of missing) {
-          await tx.orm.hotel.Amenity.create({ ...amenity, hotelId: hotel.id });
+        for (const { code, name, icon, sortOrder } of missing) {
+          await tx.orm.hotel.Amenity.create({ code, name, icon, sortOrder, hotelId: hotel.id });
         }
       });
 
@@ -105,7 +107,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   return handle("Amenities PATCH", async () => {
-    await requireAdmin();
+    await requireHotelAdmin();
     const hotel = await requireHotel();
 
     const body = await readBody(request);
@@ -127,7 +129,7 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   return handle("Amenities DELETE", async () => {
-    await requireAdmin();
+    await requireHotelAdmin();
     const hotel = await requireHotel();
 
     const id = readId(await readBody(request));

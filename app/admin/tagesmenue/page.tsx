@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 
 const days = [
-  "Montag",
   "Dienstag",
   "Mittwoch",
   "Donnerstag",
   "Freitag",
+  "Samstag",
+  "Sonntag"
 ];
 
 type MenuTemplate = {
@@ -18,7 +19,7 @@ type MenuTemplate = {
 };
 
 export default function TagesmenuePage() {
-  const [selectedDay, setSelectedDay] = useState("Montag");
+  const [selectedDay, setSelectedDay] = useState("Dienstag");
   const [dish, setDish] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");

@@ -21,6 +21,13 @@ const times = [
   "12:30",
   "13:00",
   "13:30",
+  "14:00",
+  "14:30",
+  "15:00",
+  "15:30",
+  "16:00",
+  "16:30",
+  "17:00",
   "17:30",
   "18:00",
   "18:30",
@@ -28,7 +35,99 @@ const times = [
   "19:30",
   "20:00",
   "20:30",
+  "21:00",
+  "21:30",
 ];
+
+/**
+ * Österreichische gesetzliche Feiertage.
+ *
+ * Bewegliche Feiertage werden anhand des Ostersonntags berechnet.
+ * Die Berechnung funktioniert für die aktuell verwendeten Jahre
+ * und auch für zukünftige Jahre.
+ */
+function getEasterSunday(year: number): Date {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+
+  return new Date(year, month - 1, day);
+}
+
+function addDays(date: Date, days: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
+function formatDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Liefert alle österreichischen gesetzlichen Feiertage
+ * für das angegebene Jahr.
+ */
+function getAustrianPublicHolidays(year: number): Set<string> {
+  const holidays = new Set<string>();
+
+  // Fixe gesetzliche Feiertage
+  const fixedHolidays = [
+    [1, 1], // Neujahr
+    [1, 6], // Heilige Drei Könige
+    [5, 1], // Staatsfeiertag
+    [8, 15], // Mariä Himmelfahrt
+    [10, 26], // Nationalfeiertag
+    [11, 1], // Allerheiligen
+    [12, 8], // Mariä Empfängnis
+    [12, 25], // Christtag
+    [12, 26], // Stefanitag
+  ];
+
+  for (const [month, day] of fixedHolidays) {
+    holidays.add(
+      formatDate(new Date(year, month - 1, day))
+    );
+  }
+
+  // Bewegliche gesetzliche Feiertage
+  const easter = getEasterSunday(year);
+
+  const movableHolidays = [
+    addDays(easter, 1), // Ostermontag
+    addDays(easter, 39), // Christi Himmelfahrt
+    addDays(easter, 50), // Pfingstmontag
+    addDays(easter, 60), // Fronleichnam
+  ];
+
+  for (const holiday of movableHolidays) {
+    holidays.add(formatDate(holiday));
+  }
+
+  return holidays;
+}
+
+function isAustrianPublicHoliday(date: Date): boolean {
+  const holidays = getAustrianPublicHolidays(date.getFullYear());
+
+  return holidays.has(formatDate(date));
+}
 
 function validateEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(email.trim());
@@ -42,14 +141,6 @@ function validatePhone(phone: string) {
 
 function validateName(name: string) {
   return /^[A-Za-zÀ-ÖØ-öø-ÿÄÖÜäöüß' -]{2,50}$/.test(name.trim());
-}
-
-function formatDate(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
 }
 
 function getDayName(date: Date) {
@@ -114,9 +205,31 @@ export default function ReservationWidget() {
       [key]: value,
     }));
 
-    if (key === "firstName" || key === "lastName" || key === "email" || key === "phone") {
+    if (
+      key === "firstName" ||
+      key === "lastName" ||
+      key === "email" ||
+      key === "phone"
+    ) {
       setSubmitError("");
     }
+  };
+
+  /**
+   * Restaurant ist grundsätzlich Montag geschlossen.
+   *
+   * Ausnahme:
+   * Fällt ein gesetzlicher österreichischer Feiertag auf einen Montag,
+   * darf dieser Montag reserviert werden.
+   */
+  const isRestaurantClosed = (date: Date) => {
+    const isMonday = date.getDay() === 1;
+
+    if (!isMonday) {
+      return false;
+    }
+
+    return !isAustrianPublicHoliday(date);
   };
 
   const isDateValid = (date: string) => {
@@ -135,8 +248,7 @@ export default function ReservationWidget() {
       return false;
     }
 
-    // Monday = 1
-    if (selectedDate.getDay() === 1) {
+    if (isRestaurantClosed(selectedDate)) {
       return false;
     }
 
@@ -372,7 +484,8 @@ export default function ReservationWidget() {
               {dates.slice(0, 15).map((date) => {
                 const value = formatDate(date);
                 const selected = form.date === value;
-                const closed = date.getDay() === 1;
+                const closed = isRestaurantClosed(date);
+                const publicHoliday = isAustrianPublicHoliday(date);
 
                 return (
                   <button
@@ -405,7 +518,11 @@ export default function ReservationWidget() {
                             : "text-[#756f64]"
                       }`}
                     >
-                      {closed ? "geschlossen" : getMonthName(date)}
+                      {closed
+                        ? "geschlossen"
+                        : publicHoliday
+                          ? "Feiertag"
+                          : getMonthName(date)}
                     </span>
                   </button>
                 );
@@ -413,7 +530,8 @@ export default function ReservationWidget() {
             </div>
 
             <p className="mt-5 text-xs text-[#756f64]">
-              Montags ist unser Restaurant geschlossen.
+              Montags ist unser Restaurant grundsätzlich geschlossen.
+              An gesetzlichen Feiertagen ist eine Reservierung auch montags möglich.
             </p>
 
             {form.date && !isDateValid(form.date) && (
@@ -688,7 +806,10 @@ export default function ReservationWidget() {
                 <textarea
                   value={form.message}
                   onChange={(e) =>
-                    updateForm("message", e.target.value.slice(0, 500))
+                    updateForm(
+                      "message",
+                      e.target.value.slice(0, 500)
+                    )
                   }
                   placeholder="Besondere Wünsche oder Hinweise ..."
                   rows={3}
@@ -725,15 +846,14 @@ export default function ReservationWidget() {
                   </p>
 
                   <p className="mt-1 font-semibold text-[#211f1b]">
-                    {new Date(`${form.date}T00:00:00`).toLocaleDateString(
-                      "de-AT",
-                      {
-                        weekday: "long",
-                        day: "2-digit",
-                        month: "long",
-                        year: "numeric",
-                      }
-                    )}
+                    {new Date(
+                      `${form.date}T00:00:00`
+                    ).toLocaleDateString("de-AT", {
+                      weekday: "long",
+                      day: "2-digit",
+                      month: "long",
+                      year: "numeric",
+                    })}
                   </p>
                 </div>
 

@@ -1,0 +1,161 @@
+[
+  {
+    "id": "table.menuItem",
+    "label": "Create table \"menuItem\"",
+    "summary": "Creates table \"menuItem\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "menuItem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"menuItem\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"menuItem\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"menuItem\"",
+        "sql": "CREATE TABLE \"public\".\"menuItem\" (\n  \"active\" bool DEFAULT true NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"description\" text,\n  \"id\" SERIAL NOT NULL,\n  \"menu\" text NOT NULL,\n  \"name\" text NOT NULL,\n  \"price\" numeric(10,2) NOT NULL,\n  \"restaurantId\" int4 NOT NULL,\n  \"sortOrder\" int4 DEFAULT 0 NOT NULL,\n  \"updatedAt\" timestamptz,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"menuItem_menu_check_2cc72902\" CHECK (\"menu\" IN ('SPEISEKARTE', 'GAESTEVERKAUF')),\n  CONSTRAINT \"menuItem_price_nonneg_0b66b9e8\" CHECK (\"price\" >= 0)\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"menuItem\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"menuItem\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.menuItem.menuItem_restaurantId_idx_cf3ee7d0",
+    "label": "Create index \"menuItem_restaurantId_idx_cf3ee7d0\" on \"menuItem\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "menuItem_restaurantId_idx_cf3ee7d0",
+        "table": "menuItem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"menuItem_restaurantId_idx_cf3ee7d0\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"menuItem_restaurantId_idx_cf3ee7d0\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"menuItem_restaurantId_idx_cf3ee7d0\"",
+        "sql": "CREATE INDEX \"menuItem_restaurantId_idx_cf3ee7d0\" ON \"public\".\"menuItem\" (\"restaurantId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"menuItem_restaurantId_idx_cf3ee7d0\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"menuItem_restaurantId_idx_cf3ee7d0\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.menuItem.menuItem_restaurantId_menu_active_sortOrder_idx_8a9556c8",
+    "label": "Create index \"menuItem_restaurantId_menu_active_sortOrder_idx_8a9556c8\" on \"menuItem\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "menuItem_restaurantId_menu_active_sortOrder_idx_8a9556c8",
+        "table": "menuItem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"menuItem_restaurantId_menu_active_sortOrder_idx_8a9556c8\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"menuItem_restaurantId_menu_active_sortOrder_idx_8a9556c8\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"menuItem_restaurantId_menu_active_sortOrder_idx_8a9556c8\"",
+        "sql": "CREATE INDEX \"menuItem_restaurantId_menu_active_sortOrder_idx_8a9556c8\" ON \"public\".\"menuItem\" (\"restaurantId\", \"menu\", \"active\", \"sortOrder\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"menuItem_restaurantId_menu_active_sortOrder_idx_8a9556c8\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"menuItem_restaurantId_menu_active_sortOrder_idx_8a9556c8\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.menuItem.menuItem_restaurantId_fkey",
+    "label": "Add foreign key \"menuItem_restaurantId_fkey\" on \"menuItem\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "menuItem_restaurantId_fkey",
+        "table": "menuItem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"menuItem_restaurantId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "menuItem_restaurantId_fkey",
+          "public",
+          "\"public\".\"menuItem\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"menuItem_restaurantId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"menuItem\"\nADD CONSTRAINT \"menuItem_restaurantId_fkey\"\nFOREIGN KEY (\"restaurantId\")\nREFERENCES \"public\".\"restaurant\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"menuItem_restaurantId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "menuItem_restaurantId_fkey",
+          "public",
+          "\"public\".\"menuItem\""
+        ]
+      }
+    ]
+  }
+]

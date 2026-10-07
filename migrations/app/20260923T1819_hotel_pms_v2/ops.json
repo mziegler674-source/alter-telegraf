@@ -1,0 +1,1717 @@
+[
+  {
+    "id": "dropTable.roomTypeAmenity",
+    "label": "Drop table \"roomTypeAmenity\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "table",
+        "name": "roomTypeAmenity"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"roomTypeAmenity\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"roomTypeAmenity\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop table \"roomTypeAmenity\"",
+        "sql": "DROP TABLE \"hotel\".\"roomTypeAmenity\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"roomTypeAmenity\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"roomTypeAmenity\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dropTable.amenity",
+    "label": "Drop table \"amenity\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "table",
+        "name": "amenity"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"amenity\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"amenity\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop table \"amenity\"",
+        "sql": "DROP TABLE \"hotel\".\"amenity\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"amenity\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"amenity\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dropIndex.bookingRoom.bookingRoom_roomId_checkIn_idx_35b569d4",
+    "label": "Drop index \"bookingRoom_roomId_checkIn_idx_35b569d4\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "bookingRoom_roomId_checkIn_idx_35b569d4",
+        "table": "bookingRoom"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"bookingRoom_roomId_checkIn_idx_35b569d4\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoom_roomId_checkIn_idx_35b569d4\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop index \"bookingRoom_roomId_checkIn_idx_35b569d4\"",
+        "sql": "DROP INDEX \"hotel\".\"bookingRoom_roomId_checkIn_idx_35b569d4\"",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"bookingRoom_roomId_checkIn_idx_35b569d4\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoom_roomId_checkIn_idx_35b569d4\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.promotion",
+    "label": "Create table \"promotion\"",
+    "summary": "Creates table \"promotion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "table",
+        "name": "promotion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"promotion\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"promotion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"promotion\"",
+        "sql": "CREATE TABLE \"hotel\".\"promotion\" (\n  \"active\" bool DEFAULT true NOT NULL,\n  \"bookingFrom\" date,\n  \"bookingTo\" date,\n  \"channel\" text DEFAULT 'PUBLIC' NOT NULL,\n  \"code\" text NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"description\" text,\n  \"discountPercent\" numeric(5,2) NOT NULL,\n  \"earlyBookerDays\" int4,\n  \"hotelId\" int4 NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"lastMinuteDays\" int4,\n  \"minStayNights\" int4,\n  \"name\" text NOT NULL,\n  \"stayFrom\" date,\n  \"stayTo\" date,\n  \"type\" text NOT NULL,\n  \"updatedAt\" timestamptz,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"promotion_channel_check_d475113f\" CHECK (\"channel\" IN ('PUBLIC', 'MOBILE')),\n  CONSTRAINT \"promotion_type_check_8763061b\" CHECK (\"type\" IN ('BASIC', 'EARLY_BOOKER', 'LAST_MINUTE'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"promotion\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"promotion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.promotionRatePlan",
+    "label": "Create table \"promotionRatePlan\"",
+    "summary": "Creates table \"promotionRatePlan\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "table",
+        "name": "promotionRatePlan"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"promotionRatePlan\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"promotionRatePlan\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"promotionRatePlan\"",
+        "sql": "CREATE TABLE \"hotel\".\"promotionRatePlan\" (\n  \"id\" SERIAL NOT NULL,\n  \"promotionId\" int4 NOT NULL,\n  \"ratePlanId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"promotionRatePlan\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"promotionRatePlan\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.promotionRoomType",
+    "label": "Create table \"promotionRoomType\"",
+    "summary": "Creates table \"promotionRoomType\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "table",
+        "name": "promotionRoomType"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"promotionRoomType\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"promotionRoomType\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"promotionRoomType\"",
+        "sql": "CREATE TABLE \"hotel\".\"promotionRoomType\" (\n  \"id\" SERIAL NOT NULL,\n  \"promotionId\" int4 NOT NULL,\n  \"roomTypeId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"promotionRoomType\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"promotionRoomType\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.hotel.booking.paymentAuthorizedAt",
+    "label": "Add column \"paymentAuthorizedAt\" to \"booking\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "column",
+        "name": "paymentAuthorizedAt",
+        "table": "booking"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"paymentAuthorizedAt\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "booking",
+          "paymentAuthorizedAt"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"paymentAuthorizedAt\"",
+        "sql": "ALTER TABLE \"hotel\".\"booking\" ADD COLUMN \"paymentAuthorizedAt\" timestamptz"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"paymentAuthorizedAt\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "booking",
+          "paymentAuthorizedAt"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.hotel.booking.paymentChargedAt",
+    "label": "Add column \"paymentChargedAt\" to \"booking\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "column",
+        "name": "paymentChargedAt",
+        "table": "booking"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"paymentChargedAt\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "booking",
+          "paymentChargedAt"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"paymentChargedAt\"",
+        "sql": "ALTER TABLE \"hotel\".\"booking\" ADD COLUMN \"paymentChargedAt\" timestamptz"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"paymentChargedAt\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "booking",
+          "paymentChargedAt"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.hotel.booking.paymentCustomerRef",
+    "label": "Add column \"paymentCustomerRef\" to \"booking\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "column",
+        "name": "paymentCustomerRef",
+        "table": "booking"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"paymentCustomerRef\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "booking",
+          "paymentCustomerRef"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"paymentCustomerRef\"",
+        "sql": "ALTER TABLE \"hotel\".\"booking\" ADD COLUMN \"paymentCustomerRef\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"paymentCustomerRef\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "booking",
+          "paymentCustomerRef"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.hotel.booking.paymentMethod",
+    "label": "Add column \"paymentMethod\" to \"booking\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "column",
+        "name": "paymentMethod",
+        "table": "booking"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"paymentMethod\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "booking",
+          "paymentMethod"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"paymentMethod\"",
+        "sql": "ALTER TABLE \"hotel\".\"booking\" ADD COLUMN \"paymentMethod\" text DEFAULT 'PAY_AT_HOTEL' NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"paymentMethod\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "booking",
+          "paymentMethod"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.hotel.booking.paymentMethodRef",
+    "label": "Add column \"paymentMethodRef\" to \"booking\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "column",
+        "name": "paymentMethodRef",
+        "table": "booking"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"paymentMethodRef\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "booking",
+          "paymentMethodRef"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"paymentMethodRef\"",
+        "sql": "ALTER TABLE \"hotel\".\"booking\" ADD COLUMN \"paymentMethodRef\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"paymentMethodRef\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "booking",
+          "paymentMethodRef"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.hotel.booking.paymentProvider",
+    "label": "Add column \"paymentProvider\" to \"booking\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "column",
+        "name": "paymentProvider",
+        "table": "booking"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"paymentProvider\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "booking",
+          "paymentProvider"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"paymentProvider\"",
+        "sql": "ALTER TABLE \"hotel\".\"booking\" ADD COLUMN \"paymentProvider\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"paymentProvider\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "booking",
+          "paymentProvider"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.hotel.booking.paymentStatus",
+    "label": "Add column \"paymentStatus\" to \"booking\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "column",
+        "name": "paymentStatus",
+        "table": "booking"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"paymentStatus\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "booking",
+          "paymentStatus"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"paymentStatus\"",
+        "sql": "ALTER TABLE \"hotel\".\"booking\" ADD COLUMN \"paymentStatus\" text DEFAULT 'NOT_REQUIRED' NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"paymentStatus\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "booking",
+          "paymentStatus"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.hotel.ratePlan.cardGuaranteeRequired",
+    "label": "Add column \"cardGuaranteeRequired\" to \"ratePlan\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "column",
+        "name": "cardGuaranteeRequired",
+        "table": "ratePlan"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"cardGuaranteeRequired\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "ratePlan",
+          "cardGuaranteeRequired"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"cardGuaranteeRequired\"",
+        "sql": "ALTER TABLE \"hotel\".\"ratePlan\" ADD COLUMN \"cardGuaranteeRequired\" bool DEFAULT false NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"cardGuaranteeRequired\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "ratePlan",
+          "cardGuaranteeRequired"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.hotel.booking.discountTotal",
+    "label": "Add column \"discountTotal\" to \"booking\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "column",
+        "name": "discountTotal",
+        "table": "booking"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"discountTotal\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "booking",
+          "discountTotal"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"discountTotal\"",
+        "sql": "ALTER TABLE \"hotel\".\"booking\" ADD COLUMN \"discountTotal\" numeric(10,2)"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"discountTotal\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "booking",
+          "discountTotal"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "backfill-booking-discountTotal",
+    "label": "Backfill booking.discountTotal mit 0",
+    "operationClass": "data",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Backfill booking.discountTotal mit 0",
+        "sql": "UPDATE \"hotel\".\"booking\" SET \"discountTotal\" = 0 WHERE \"discountTotal\" IS NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "Keine NULL-Werte in booking.discountTotal mehr",
+        "sql": "SELECT NOT EXISTS (SELECT 1 FROM \"hotel\".\"booking\" WHERE \"discountTotal\" IS NULL) AS \"result\""
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.setNotNull.booking.discountTotal",
+    "label": "Set NOT NULL on \"booking\".\"discountTotal\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "column",
+        "name": "discountTotal",
+        "table": "booking"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"discountTotal\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "booking",
+          "discountTotal"
+        ]
+      },
+      {
+        "description": "ensure no NULL values in \"discountTotal\"",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"hotel\".\"booking\" WHERE \"discountTotal\" IS NULL) AS \"result\"",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "set NOT NULL on \"discountTotal\"",
+        "sql": "ALTER TABLE \"hotel\".\"booking\" ALTER COLUMN \"discountTotal\" SET NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"discountTotal\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "hotel",
+          "booking",
+          "discountTotal",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.hotel.bookingRoom.mealPlanSnapshot",
+    "label": "Add column \"mealPlanSnapshot\" to \"bookingRoom\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "column",
+        "name": "mealPlanSnapshot",
+        "table": "bookingRoom"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"mealPlanSnapshot\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "bookingRoom",
+          "mealPlanSnapshot"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"mealPlanSnapshot\"",
+        "sql": "ALTER TABLE \"hotel\".\"bookingRoom\" ADD COLUMN \"mealPlanSnapshot\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"mealPlanSnapshot\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "bookingRoom",
+          "mealPlanSnapshot"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "backfill-bookingRoom-mealPlanSnapshot",
+    "label": "Backfill bookingRoom.mealPlanSnapshot mit ROOM_ONLY",
+    "operationClass": "data",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Backfill bookingRoom.mealPlanSnapshot mit ROOM_ONLY",
+        "sql": "UPDATE \"hotel\".\"bookingRoom\" SET \"mealPlanSnapshot\" = 'ROOM_ONLY' WHERE \"mealPlanSnapshot\" IS NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "Keine NULL-Werte in bookingRoom.mealPlanSnapshot mehr",
+        "sql": "SELECT NOT EXISTS (SELECT 1 FROM \"hotel\".\"bookingRoom\" WHERE \"mealPlanSnapshot\" IS NULL) AS \"result\""
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.setNotNull.bookingRoom.mealPlanSnapshot",
+    "label": "Set NOT NULL on \"bookingRoom\".\"mealPlanSnapshot\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "column",
+        "name": "mealPlanSnapshot",
+        "table": "bookingRoom"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"mealPlanSnapshot\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "bookingRoom",
+          "mealPlanSnapshot"
+        ]
+      },
+      {
+        "description": "ensure no NULL values in \"mealPlanSnapshot\"",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"hotel\".\"bookingRoom\" WHERE \"mealPlanSnapshot\" IS NULL) AS \"result\"",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "set NOT NULL on \"mealPlanSnapshot\"",
+        "sql": "ALTER TABLE \"hotel\".\"bookingRoom\" ALTER COLUMN \"mealPlanSnapshot\" SET NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"mealPlanSnapshot\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "hotel",
+          "bookingRoom",
+          "mealPlanSnapshot",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.hotel.room.bedConfiguration",
+    "label": "Add column \"bedConfiguration\" to \"room\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "column",
+        "name": "bedConfiguration",
+        "table": "room"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"bedConfiguration\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "room",
+          "bedConfiguration"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"bedConfiguration\"",
+        "sql": "ALTER TABLE \"hotel\".\"room\" ADD COLUMN \"bedConfiguration\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"bedConfiguration\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "room",
+          "bedConfiguration"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "backfill-room-bedConfiguration",
+    "label": "Backfill room.bedConfiguration mit Uebergangswert",
+    "operationClass": "data",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Backfill room.bedConfiguration mit Uebergangswert",
+        "sql": "UPDATE \"hotel\".\"room\" SET \"bedConfiguration\" = 'Nicht erfasst' WHERE \"bedConfiguration\" IS NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "Keine NULL-Werte in room.bedConfiguration mehr",
+        "sql": "SELECT NOT EXISTS (SELECT 1 FROM \"hotel\".\"room\" WHERE \"bedConfiguration\" IS NULL) AS \"result\""
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.setNotNull.room.bedConfiguration",
+    "label": "Set NOT NULL on \"room\".\"bedConfiguration\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "column",
+        "name": "bedConfiguration",
+        "table": "room"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"bedConfiguration\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "room",
+          "bedConfiguration"
+        ]
+      },
+      {
+        "description": "ensure no NULL values in \"bedConfiguration\"",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"hotel\".\"room\" WHERE \"bedConfiguration\" IS NULL) AS \"result\"",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "set NOT NULL on \"bedConfiguration\"",
+        "sql": "ALTER TABLE \"hotel\".\"room\" ALTER COLUMN \"bedConfiguration\" SET NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"bedConfiguration\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "hotel",
+          "room",
+          "bedConfiguration",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "setDefault.ratePlan.mealPlan",
+    "label": "Default von ratePlan.mealPlan auf ROOM_ONLY setzen",
+    "operationClass": "widening",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "ratePlan.mealPlan SET DEFAULT ROOM_ONLY",
+        "sql": "ALTER TABLE \"hotel\".\"ratePlan\" ALTER COLUMN \"mealPlan\" SET DEFAULT 'ROOM_ONLY'"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "Default ist ROOM_ONLY",
+        "sql": "SELECT (SELECT \"column_default\" FROM \"information_schema\".\"columns\" WHERE \"table_schema\" = 'hotel' AND \"table_name\" = 'ratePlan' AND \"column_name\" = 'mealPlan') = '''ROOM_ONLY''::text' AS \"result\""
+      }
+    ]
+  },
+  {
+    "id": "setDefault.roomType.breakfastIncluded",
+    "label": "Default von roomType.breakfastIncluded auf false setzen",
+    "operationClass": "widening",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "roomType.breakfastIncluded SET DEFAULT false",
+        "sql": "ALTER TABLE \"hotel\".\"roomType\" ALTER COLUMN \"breakfastIncluded\" SET DEFAULT false"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "Default ist false",
+        "sql": "SELECT (SELECT \"column_default\" FROM \"information_schema\".\"columns\" WHERE \"table_schema\" = 'hotel' AND \"table_name\" = 'roomType' AND \"column_name\" = 'breakfastIncluded') = 'false' AS \"result\""
+      }
+    ]
+  },
+  {
+    "id": "checkConstraint.booking.booking_paymentMethod_check_1857449a",
+    "label": "Add check constraint \"booking_paymentMethod_check_1857449a\" on \"booking\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "checkConstraint",
+        "name": "booking_paymentMethod_check_1857449a",
+        "table": "booking"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"booking_paymentMethod_check_1857449a\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "booking_paymentMethod_check_1857449a",
+          "hotel",
+          "\"hotel\".\"booking\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"booking_paymentMethod_check_1857449a\"",
+        "sql": "ALTER TABLE \"hotel\".\"booking\" ADD CONSTRAINT \"booking_paymentMethod_check_1857449a\" CHECK (\"paymentMethod\" IN ('PAY_AT_HOTEL', 'CARD_GUARANTEE'))"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"booking_paymentMethod_check_1857449a\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "booking_paymentMethod_check_1857449a",
+          "hotel",
+          "\"hotel\".\"booking\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "checkConstraint.booking.booking_paymentStatus_check_d1c93aff",
+    "label": "Add check constraint \"booking_paymentStatus_check_d1c93aff\" on \"booking\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "checkConstraint",
+        "name": "booking_paymentStatus_check_d1c93aff",
+        "table": "booking"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"booking_paymentStatus_check_d1c93aff\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "booking_paymentStatus_check_d1c93aff",
+          "hotel",
+          "\"hotel\".\"booking\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"booking_paymentStatus_check_d1c93aff\"",
+        "sql": "ALTER TABLE \"hotel\".\"booking\" ADD CONSTRAINT \"booking_paymentStatus_check_d1c93aff\" CHECK (\"paymentStatus\" IN ('NOT_REQUIRED', 'PENDING', 'VERIFIED', 'AUTHORIZED', 'CHARGED', 'FAILED', 'CANCELLED'))"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"booking_paymentStatus_check_d1c93aff\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "booking_paymentStatus_check_d1c93aff",
+          "hotel",
+          "\"hotel\".\"booking\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "checkConstraint.bookingRoom.bookingRoom_mealPlanSnapshot_check_fb97cc4d",
+    "label": "Add check constraint \"bookingRoom_mealPlanSnapshot_check_fb97cc4d\" on \"bookingRoom\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "checkConstraint",
+        "name": "bookingRoom_mealPlanSnapshot_check_fb97cc4d",
+        "table": "bookingRoom"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"bookingRoom_mealPlanSnapshot_check_fb97cc4d\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bookingRoom_mealPlanSnapshot_check_fb97cc4d",
+          "hotel",
+          "\"hotel\".\"bookingRoom\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"bookingRoom_mealPlanSnapshot_check_fb97cc4d\"",
+        "sql": "ALTER TABLE \"hotel\".\"bookingRoom\" ADD CONSTRAINT \"bookingRoom_mealPlanSnapshot_check_fb97cc4d\" CHECK (\"mealPlanSnapshot\" IN ('ROOM_ONLY', 'BREAKFAST', 'HALF_BOARD', 'FULL_BOARD'))"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"bookingRoom_mealPlanSnapshot_check_fb97cc4d\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bookingRoom_mealPlanSnapshot_check_fb97cc4d",
+          "hotel",
+          "\"hotel\".\"bookingRoom\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.promotion.promotion_hotelId_code_key",
+    "label": "Add unique constraint on \"promotion\" (hotelId, code)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "unique",
+        "name": "promotion_hotelId_code_key",
+        "table": "promotion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"promotion_hotelId_code_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "promotion_hotelId_code_key",
+          "hotel",
+          "\"hotel\".\"promotion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"promotion_hotelId_code_key\"",
+        "sql": "ALTER TABLE \"hotel\".\"promotion\" ADD CONSTRAINT \"promotion_hotelId_code_key\" UNIQUE (\"hotelId\", \"code\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"promotion_hotelId_code_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "promotion_hotelId_code_key",
+          "hotel",
+          "\"hotel\".\"promotion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.promotionRatePlan.promotionRatePlan_promotionId_ratePlanId_key",
+    "label": "Add unique constraint on \"promotionRatePlan\" (promotionId, ratePlanId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "unique",
+        "name": "promotionRatePlan_promotionId_ratePlanId_key",
+        "table": "promotionRatePlan"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"promotionRatePlan_promotionId_ratePlanId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "promotionRatePlan_promotionId_ratePlanId_key",
+          "hotel",
+          "\"hotel\".\"promotionRatePlan\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"promotionRatePlan_promotionId_ratePlanId_key\"",
+        "sql": "ALTER TABLE \"hotel\".\"promotionRatePlan\" ADD CONSTRAINT \"promotionRatePlan_promotionId_ratePlanId_key\" UNIQUE (\"promotionId\", \"ratePlanId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"promotionRatePlan_promotionId_ratePlanId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "promotionRatePlan_promotionId_ratePlanId_key",
+          "hotel",
+          "\"hotel\".\"promotionRatePlan\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.promotionRoomType.promotionRoomType_promotionId_roomTypeId_key",
+    "label": "Add unique constraint on \"promotionRoomType\" (promotionId, roomTypeId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "unique",
+        "name": "promotionRoomType_promotionId_roomTypeId_key",
+        "table": "promotionRoomType"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"promotionRoomType_promotionId_roomTypeId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "promotionRoomType_promotionId_roomTypeId_key",
+          "hotel",
+          "\"hotel\".\"promotionRoomType\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"promotionRoomType_promotionId_roomTypeId_key\"",
+        "sql": "ALTER TABLE \"hotel\".\"promotionRoomType\" ADD CONSTRAINT \"promotionRoomType_promotionId_roomTypeId_key\" UNIQUE (\"promotionId\", \"roomTypeId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"promotionRoomType_promotionId_roomTypeId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "promotionRoomType_promotionId_roomTypeId_key",
+          "hotel",
+          "\"hotel\".\"promotionRoomType\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.booking.booking_hotelId_checkOut_idx_ac162b13",
+    "label": "Create index \"booking_hotelId_checkOut_idx_ac162b13\" on \"booking\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "booking_hotelId_checkOut_idx_ac162b13",
+        "table": "booking"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"booking_hotelId_checkOut_idx_ac162b13\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"booking_hotelId_checkOut_idx_ac162b13\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"booking_hotelId_checkOut_idx_ac162b13\"",
+        "sql": "CREATE INDEX \"booking_hotelId_checkOut_idx_ac162b13\" ON \"hotel\".\"booking\" (\"hotelId\", \"checkOut\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"booking_hotelId_checkOut_idx_ac162b13\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"booking_hotelId_checkOut_idx_ac162b13\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.bookingRoom.bookingRoom_roomId_checkIn_checkOut_idx_f5abf4de",
+    "label": "Create index \"bookingRoom_roomId_checkIn_checkOut_idx_f5abf4de\" on \"bookingRoom\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "bookingRoom_roomId_checkIn_checkOut_idx_f5abf4de",
+        "table": "bookingRoom"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"bookingRoom_roomId_checkIn_checkOut_idx_f5abf4de\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoom_roomId_checkIn_checkOut_idx_f5abf4de\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"bookingRoom_roomId_checkIn_checkOut_idx_f5abf4de\"",
+        "sql": "CREATE INDEX \"bookingRoom_roomId_checkIn_checkOut_idx_f5abf4de\" ON \"hotel\".\"bookingRoom\" (\"roomId\", \"checkIn\", \"checkOut\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"bookingRoom_roomId_checkIn_checkOut_idx_f5abf4de\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"bookingRoom_roomId_checkIn_checkOut_idx_f5abf4de\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.promotion.promotion_hotelId_active_idx_f1412091",
+    "label": "Create index \"promotion_hotelId_active_idx_f1412091\" on \"promotion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "promotion_hotelId_active_idx_f1412091",
+        "table": "promotion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"promotion_hotelId_active_idx_f1412091\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"promotion_hotelId_active_idx_f1412091\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"promotion_hotelId_active_idx_f1412091\"",
+        "sql": "CREATE INDEX \"promotion_hotelId_active_idx_f1412091\" ON \"hotel\".\"promotion\" (\"hotelId\", \"active\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"promotion_hotelId_active_idx_f1412091\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"promotion_hotelId_active_idx_f1412091\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.promotion.promotion_hotelId_idx_462a16a4",
+    "label": "Create index \"promotion_hotelId_idx_462a16a4\" on \"promotion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "promotion_hotelId_idx_462a16a4",
+        "table": "promotion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"promotion_hotelId_idx_462a16a4\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"promotion_hotelId_idx_462a16a4\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"promotion_hotelId_idx_462a16a4\"",
+        "sql": "CREATE INDEX \"promotion_hotelId_idx_462a16a4\" ON \"hotel\".\"promotion\" (\"hotelId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"promotion_hotelId_idx_462a16a4\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"promotion_hotelId_idx_462a16a4\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.promotionRatePlan.promotionRatePlan_promotionId_idx_61ce0068",
+    "label": "Create index \"promotionRatePlan_promotionId_idx_61ce0068\" on \"promotionRatePlan\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "promotionRatePlan_promotionId_idx_61ce0068",
+        "table": "promotionRatePlan"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"promotionRatePlan_promotionId_idx_61ce0068\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"promotionRatePlan_promotionId_idx_61ce0068\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"promotionRatePlan_promotionId_idx_61ce0068\"",
+        "sql": "CREATE INDEX \"promotionRatePlan_promotionId_idx_61ce0068\" ON \"hotel\".\"promotionRatePlan\" (\"promotionId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"promotionRatePlan_promotionId_idx_61ce0068\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"promotionRatePlan_promotionId_idx_61ce0068\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.promotionRatePlan.promotionRatePlan_ratePlanId_idx_18cf7a69",
+    "label": "Create index \"promotionRatePlan_ratePlanId_idx_18cf7a69\" on \"promotionRatePlan\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "promotionRatePlan_ratePlanId_idx_18cf7a69",
+        "table": "promotionRatePlan"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"promotionRatePlan_ratePlanId_idx_18cf7a69\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"promotionRatePlan_ratePlanId_idx_18cf7a69\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"promotionRatePlan_ratePlanId_idx_18cf7a69\"",
+        "sql": "CREATE INDEX \"promotionRatePlan_ratePlanId_idx_18cf7a69\" ON \"hotel\".\"promotionRatePlan\" (\"ratePlanId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"promotionRatePlan_ratePlanId_idx_18cf7a69\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"promotionRatePlan_ratePlanId_idx_18cf7a69\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.promotionRoomType.promotionRoomType_promotionId_idx_61ce0068",
+    "label": "Create index \"promotionRoomType_promotionId_idx_61ce0068\" on \"promotionRoomType\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "promotionRoomType_promotionId_idx_61ce0068",
+        "table": "promotionRoomType"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"promotionRoomType_promotionId_idx_61ce0068\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"promotionRoomType_promotionId_idx_61ce0068\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"promotionRoomType_promotionId_idx_61ce0068\"",
+        "sql": "CREATE INDEX \"promotionRoomType_promotionId_idx_61ce0068\" ON \"hotel\".\"promotionRoomType\" (\"promotionId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"promotionRoomType_promotionId_idx_61ce0068\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"promotionRoomType_promotionId_idx_61ce0068\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.promotionRoomType.promotionRoomType_roomTypeId_idx_0c4e04bc",
+    "label": "Create index \"promotionRoomType_roomTypeId_idx_0c4e04bc\" on \"promotionRoomType\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "promotionRoomType_roomTypeId_idx_0c4e04bc",
+        "table": "promotionRoomType"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"promotionRoomType_roomTypeId_idx_0c4e04bc\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"promotionRoomType_roomTypeId_idx_0c4e04bc\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"promotionRoomType_roomTypeId_idx_0c4e04bc\"",
+        "sql": "CREATE INDEX \"promotionRoomType_roomTypeId_idx_0c4e04bc\" ON \"hotel\".\"promotionRoomType\" (\"roomTypeId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"promotionRoomType_roomTypeId_idx_0c4e04bc\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"promotionRoomType_roomTypeId_idx_0c4e04bc\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.promotion.promotion_hotelId_fkey",
+    "label": "Add foreign key \"promotion_hotelId_fkey\" on \"promotion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "promotion_hotelId_fkey",
+        "table": "promotion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"promotion_hotelId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "promotion_hotelId_fkey",
+          "hotel",
+          "\"hotel\".\"promotion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"promotion_hotelId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"promotion\"\nADD CONSTRAINT \"promotion_hotelId_fkey\"\nFOREIGN KEY (\"hotelId\")\nREFERENCES \"hotel\".\"hotel\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"promotion_hotelId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "promotion_hotelId_fkey",
+          "hotel",
+          "\"hotel\".\"promotion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.promotionRatePlan.promotionRatePlan_promotionId_fkey",
+    "label": "Add foreign key \"promotionRatePlan_promotionId_fkey\" on \"promotionRatePlan\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "promotionRatePlan_promotionId_fkey",
+        "table": "promotionRatePlan"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"promotionRatePlan_promotionId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "promotionRatePlan_promotionId_fkey",
+          "hotel",
+          "\"hotel\".\"promotionRatePlan\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"promotionRatePlan_promotionId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"promotionRatePlan\"\nADD CONSTRAINT \"promotionRatePlan_promotionId_fkey\"\nFOREIGN KEY (\"promotionId\")\nREFERENCES \"hotel\".\"promotion\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"promotionRatePlan_promotionId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "promotionRatePlan_promotionId_fkey",
+          "hotel",
+          "\"hotel\".\"promotionRatePlan\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.promotionRatePlan.promotionRatePlan_ratePlanId_fkey",
+    "label": "Add foreign key \"promotionRatePlan_ratePlanId_fkey\" on \"promotionRatePlan\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "promotionRatePlan_ratePlanId_fkey",
+        "table": "promotionRatePlan"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"promotionRatePlan_ratePlanId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "promotionRatePlan_ratePlanId_fkey",
+          "hotel",
+          "\"hotel\".\"promotionRatePlan\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"promotionRatePlan_ratePlanId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"promotionRatePlan\"\nADD CONSTRAINT \"promotionRatePlan_ratePlanId_fkey\"\nFOREIGN KEY (\"ratePlanId\")\nREFERENCES \"hotel\".\"ratePlan\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"promotionRatePlan_ratePlanId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "promotionRatePlan_ratePlanId_fkey",
+          "hotel",
+          "\"hotel\".\"promotionRatePlan\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.promotionRoomType.promotionRoomType_promotionId_fkey",
+    "label": "Add foreign key \"promotionRoomType_promotionId_fkey\" on \"promotionRoomType\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "promotionRoomType_promotionId_fkey",
+        "table": "promotionRoomType"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"promotionRoomType_promotionId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "promotionRoomType_promotionId_fkey",
+          "hotel",
+          "\"hotel\".\"promotionRoomType\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"promotionRoomType_promotionId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"promotionRoomType\"\nADD CONSTRAINT \"promotionRoomType_promotionId_fkey\"\nFOREIGN KEY (\"promotionId\")\nREFERENCES \"hotel\".\"promotion\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"promotionRoomType_promotionId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "promotionRoomType_promotionId_fkey",
+          "hotel",
+          "\"hotel\".\"promotionRoomType\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.promotionRoomType.promotionRoomType_roomTypeId_fkey",
+    "label": "Add foreign key \"promotionRoomType_roomTypeId_fkey\" on \"promotionRoomType\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "promotionRoomType_roomTypeId_fkey",
+        "table": "promotionRoomType"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"promotionRoomType_roomTypeId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "promotionRoomType_roomTypeId_fkey",
+          "hotel",
+          "\"hotel\".\"promotionRoomType\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"promotionRoomType_roomTypeId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"promotionRoomType\"\nADD CONSTRAINT \"promotionRoomType_roomTypeId_fkey\"\nFOREIGN KEY (\"roomTypeId\")\nREFERENCES \"hotel\".\"roomType\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"promotionRoomType_roomTypeId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "promotionRoomType_roomTypeId_fkey",
+          "hotel",
+          "\"hotel\".\"promotionRoomType\""
+        ]
+      }
+    ]
+  }
+]

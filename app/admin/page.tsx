@@ -270,6 +270,74 @@ export default function AdminDashboard() {
               </div>
             </a>
 
+            {/* SPEISEKARTE */}
+            <a
+              href="/admin/karten"
+              className="group border border-[#211f1b]/10 bg-white p-8 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl"
+            >
+              <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#315c45]">
+                Restaurant
+              </p>
+
+              <h4 className="mt-2 font-serif text-4xl">Unsere Karten</h4>
+
+              <p className="mt-4 max-w-md text-sm leading-7 text-[#756f64]">
+                Die sieben Speisekarten als PDF austauschen. Die neue Datei ist sofort
+                auf der Website sichtbar.
+              </p>
+
+              <div className="mt-7">
+                <span className="text-sm font-semibold text-[#315c45]">
+                  Karten verwalten →
+                </span>
+              </div>
+            </a>
+
+            {/* GÄSTEVERKAUF */}
+            <a
+              href="/admin/gaesteverkauf"
+              className="group border border-[#211f1b]/10 bg-white p-8 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl"
+            >
+              <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#315c45]">
+                Restaurant
+              </p>
+
+              <h4 className="mt-2 font-serif text-4xl">Gästeverkauf</h4>
+
+              <p className="mt-4 max-w-md text-sm leading-7 text-[#756f64]">
+                Eigene Karte für Speisen zum Mitnehmen. Getrennt von der
+                Speisekarte, mit eigenen Preisen.
+              </p>
+
+              <div className="mt-7">
+                <span className="text-sm font-semibold text-[#315c45]">
+                  Gästeverkauf verwalten →
+                </span>
+              </div>
+            </a>
+
+            {/* HOTEL-PMS */}
+            <a
+              href="/admin/hotel"
+              className="group border border-[#211f1b]/10 bg-white p-8 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl"
+            >
+              <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#315c45]">
+                Hotel
+              </p>
+
+              <h4 className="mt-2 font-serif text-4xl">Hotel-PMS</h4>
+
+              <p className="mt-4 max-w-md text-sm leading-7 text-[#756f64]">
+                Zimmer, Zimmerarten, Preise und künftig Buchungen und Kalender.
+              </p>
+
+              <div className="mt-7">
+                <span className="text-sm font-semibold text-[#315c45]">
+                  Hotel verwalten →
+                </span>
+              </div>
+            </a>
+
             {/* WEBSITE */}
             <a
               href="/restaurant"

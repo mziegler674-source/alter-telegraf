@@ -186,6 +186,26 @@ export default function AmenitiesPage() {
         }
       />
 
+      <nav className="mt-6 flex flex-wrap gap-2 text-sm">
+        <a
+          href="/admin/hotel/zimmerarten"
+          className="rounded-full border border-[#211f1b]/15 bg-white px-4 py-2 font-semibold transition hover:border-[#315c45]"
+        >
+          Allgemein
+        </a>
+
+        <a
+          href="/admin/hotel/zimmerarten/bilder"
+          className="rounded-full border border-[#211f1b]/15 bg-white px-4 py-2 font-semibold transition hover:border-[#315c45]"
+        >
+          Bilder
+        </a>
+
+        <span className="rounded-full bg-[#315c45] px-4 py-2 font-semibold text-white">
+          Ausstattung
+        </span>
+      </nav>
+
       <div className="mt-8 space-y-3">
         {!loading && !hotelReady && <HotelMissing />}
         {error && <Alert kind="error">{error}</Alert>}

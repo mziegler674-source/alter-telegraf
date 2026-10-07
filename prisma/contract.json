@@ -56,9 +56,33 @@
       "model": "Inventory",
       "namespace": "hotel"
     },
+    "menuCard": {
+      "model": "MenuCard",
+      "namespace": "public"
+    },
+    "menuItem": {
+      "model": "MenuItem",
+      "namespace": "public"
+    },
     "menuTemplate": {
       "model": "MenuTemplate",
       "namespace": "public"
+    },
+    "paymentEvent": {
+      "model": "PaymentEvent",
+      "namespace": "hotel"
+    },
+    "promotion": {
+      "model": "Promotion",
+      "namespace": "hotel"
+    },
+    "promotionRatePlan": {
+      "model": "PromotionRatePlan",
+      "namespace": "hotel"
+    },
+    "promotionRoomType": {
+      "model": "PromotionRoomType",
+      "namespace": "hotel"
     },
     "ratePlan": {
       "model": "RatePlan",
@@ -301,6 +325,17 @@
                   "kind": "scalar"
                 }
               },
+              "discountTotal": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/numeric@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 10,
+                    "scale": 2
+                  }
+                }
+              },
               "externalBookingId": {
                 "nullable": true,
                 "type": {
@@ -359,6 +394,67 @@
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
+                }
+              },
+              "paymentAuthorizedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "paymentChargedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "paymentCustomerRef": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "paymentMethod": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "payment_method",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
+              "paymentMethodRef": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "paymentProvider": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "paymentStatus": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "payment_status",
+                  "namespaceId": "public",
+                  "plane": "domain"
                 }
               },
               "roomsTotal": {
@@ -463,6 +559,21 @@
                   "namespace": "hotel"
                 }
               },
+              "paymentEvents": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "bookingId"
+                  ]
+                },
+                "to": {
+                  "model": "PaymentEvent",
+                  "namespace": "hotel"
+                }
+              },
               "rooms": {
                 "cardinality": "1:N",
                 "on": {
@@ -517,6 +628,9 @@
                 "depositPaidAt": {
                   "column": "depositPaidAt"
                 },
+                "discountTotal": {
+                  "column": "discountTotal"
+                },
                 "externalBookingId": {
                   "column": "externalBookingId"
                 },
@@ -540,6 +654,27 @@
                 },
                 "internalNote": {
                   "column": "internalNote"
+                },
+                "paymentAuthorizedAt": {
+                  "column": "paymentAuthorizedAt"
+                },
+                "paymentChargedAt": {
+                  "column": "paymentChargedAt"
+                },
+                "paymentCustomerRef": {
+                  "column": "paymentCustomerRef"
+                },
+                "paymentMethod": {
+                  "column": "paymentMethod"
+                },
+                "paymentMethodRef": {
+                  "column": "paymentMethodRef"
+                },
+                "paymentProvider": {
+                  "column": "paymentProvider"
+                },
+                "paymentStatus": {
+                  "column": "paymentStatus"
                 },
                 "roomsTotal": {
                   "column": "roomsTotal"
@@ -721,6 +856,19 @@
                   "kind": "scalar"
                 }
               },
+              "bedType": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "bed_type",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
               "bookingId": {
                 "nullable": false,
                 "type": {
@@ -761,6 +909,19 @@
                 "type": {
                   "codecId": "pg/int4@1",
                   "kind": "scalar"
+                }
+              },
+              "mealPlanSnapshot": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "meal_plan",
+                  "namespaceId": "public",
+                  "plane": "domain"
                 }
               },
               "note": {
@@ -928,6 +1089,9 @@
                 "adults": {
                   "column": "adults"
                 },
+                "bedType": {
+                  "column": "bedType"
+                },
                 "bookingId": {
                   "column": "bookingId"
                 },
@@ -945,6 +1109,9 @@
                 },
                 "id": {
                   "column": "id"
+                },
+                "mealPlanSnapshot": {
+                  "column": "mealPlanSnapshot"
                 },
                 "note": {
                   "column": "note"
@@ -1195,6 +1362,17 @@
                   "codecId": "pg/text@1",
                   "kind": "scalar"
                 }
+              },
+              "noShowFeePercent": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/numeric@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 5,
+                    "scale": 2
+                  }
+                }
               }
             },
             "relations": {
@@ -1263,6 +1441,9 @@
                 },
                 "name": {
                   "column": "name"
+                },
+                "noShowFeePercent": {
+                  "column": "noShowFeePercent"
                 }
               },
               "namespaceId": "hotel",
@@ -1784,6 +1965,21 @@
                   "namespace": "hotel"
                 }
               },
+              "promotions": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "hotelId"
+                  ]
+                },
+                "to": {
+                  "model": "Promotion",
+                  "namespace": "hotel"
+                }
+              },
               "ratePlans": {
                 "cardinality": "1:N",
                 "on": {
@@ -2150,6 +2346,500 @@
               "table": "inventory"
             }
           },
+          "PaymentEvent": {
+            "fields": {
+              "bookingId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "eventId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "eventType": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "processedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "provider": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "result": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "booking": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "bookingId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Booking",
+                  "namespace": "hotel"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "bookingId": {
+                  "column": "bookingId"
+                },
+                "eventId": {
+                  "column": "eventId"
+                },
+                "eventType": {
+                  "column": "eventType"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "processedAt": {
+                  "column": "processedAt"
+                },
+                "provider": {
+                  "column": "provider"
+                },
+                "result": {
+                  "column": "result"
+                }
+              },
+              "namespaceId": "hotel",
+              "table": "paymentEvent"
+            }
+          },
+          "Promotion": {
+            "fields": {
+              "active": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "bookingFrom": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/date-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "bookingTo": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/date-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "channel": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "promotion_channel",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
+              "code": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "description": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "discountPercent": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/numeric@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 5,
+                    "scale": 2
+                  }
+                }
+              },
+              "earlyBookerDays": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "hotelId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "lastMinuteDays": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "minStayNights": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "name": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "stayFrom": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/date-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "stayTo": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/date-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "type": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "promotion_type",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
+              "updatedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "hotel": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "hotelId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Hotel",
+                  "namespace": "hotel"
+                }
+              },
+              "ratePlans": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "promotionId"
+                  ]
+                },
+                "to": {
+                  "model": "PromotionRatePlan",
+                  "namespace": "hotel"
+                }
+              },
+              "roomTypes": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "promotionId"
+                  ]
+                },
+                "to": {
+                  "model": "PromotionRoomType",
+                  "namespace": "hotel"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "active": {
+                  "column": "active"
+                },
+                "bookingFrom": {
+                  "column": "bookingFrom"
+                },
+                "bookingTo": {
+                  "column": "bookingTo"
+                },
+                "channel": {
+                  "column": "channel"
+                },
+                "code": {
+                  "column": "code"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "description": {
+                  "column": "description"
+                },
+                "discountPercent": {
+                  "column": "discountPercent"
+                },
+                "earlyBookerDays": {
+                  "column": "earlyBookerDays"
+                },
+                "hotelId": {
+                  "column": "hotelId"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "lastMinuteDays": {
+                  "column": "lastMinuteDays"
+                },
+                "minStayNights": {
+                  "column": "minStayNights"
+                },
+                "name": {
+                  "column": "name"
+                },
+                "stayFrom": {
+                  "column": "stayFrom"
+                },
+                "stayTo": {
+                  "column": "stayTo"
+                },
+                "type": {
+                  "column": "type"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "hotel",
+              "table": "promotion"
+            }
+          },
+          "PromotionRatePlan": {
+            "fields": {
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "promotionId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "ratePlanId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "promotion": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "promotionId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Promotion",
+                  "namespace": "hotel"
+                }
+              },
+              "ratePlan": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "ratePlanId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "RatePlan",
+                  "namespace": "hotel"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "id": {
+                  "column": "id"
+                },
+                "promotionId": {
+                  "column": "promotionId"
+                },
+                "ratePlanId": {
+                  "column": "ratePlanId"
+                }
+              },
+              "namespaceId": "hotel",
+              "table": "promotionRatePlan"
+            }
+          },
+          "PromotionRoomType": {
+            "fields": {
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "promotionId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "roomTypeId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "promotion": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "promotionId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Promotion",
+                  "namespace": "hotel"
+                }
+              },
+              "roomType": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "roomTypeId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "RoomType",
+                  "namespace": "hotel"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "id": {
+                  "column": "id"
+                },
+                "promotionId": {
+                  "column": "promotionId"
+                },
+                "roomTypeId": {
+                  "column": "roomTypeId"
+                }
+              },
+              "namespaceId": "hotel",
+              "table": "promotionRoomType"
+            }
+          },
           "RatePlan": {
             "fields": {
               "active": {
@@ -2170,6 +2860,13 @@
                 "nullable": true,
                 "type": {
                   "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "cardGuaranteeRequired": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
                   "kind": "scalar"
                 }
               },
@@ -2321,6 +3018,21 @@
                   "model": "RatePrice",
                   "namespace": "hotel"
                 }
+              },
+              "promotions": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "ratePlanId"
+                  ]
+                },
+                "to": {
+                  "model": "PromotionRatePlan",
+                  "namespace": "hotel"
+                }
               }
             },
             "storage": {
@@ -2333,6 +3045,9 @@
                 },
                 "cancellationPolicyId": {
                   "column": "cancellationPolicyId"
+                },
+                "cardGuaranteeRequired": {
+                  "column": "cardGuaranteeRequired"
                 },
                 "channelCode": {
                   "column": "channelCode"
@@ -2386,7 +3101,7 @@
                 }
               },
               "date": {
-                "nullable": false,
+                "nullable": true,
                 "type": {
                   "codecId": "pg/date-temporal@1",
                   "kind": "scalar"
@@ -2487,6 +3202,26 @@
                   "kind": "scalar"
                 }
               },
+              "bedConfiguration": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "bedType": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "bed_type",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
               "createdAt": {
                 "nullable": false,
                 "type": {
@@ -2509,6 +3244,13 @@
                 }
               },
               "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "maxOccupancy": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/int4@1",
@@ -2602,6 +3344,12 @@
                 "active": {
                   "column": "active"
                 },
+                "bedConfiguration": {
+                  "column": "bedConfiguration"
+                },
+                "bedType": {
+                  "column": "bedType"
+                },
                 "createdAt": {
                   "column": "createdAt"
                 },
@@ -2613,6 +3361,9 @@
                 },
                 "id": {
                   "column": "id"
+                },
+                "maxOccupancy": {
+                  "column": "maxOccupancy"
                 },
                 "notes": {
                   "column": "notes"
@@ -2864,6 +3615,21 @@
                   "namespace": "hotel"
                 }
               },
+              "promotions": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "roomTypeId"
+                  ]
+                },
+                "to": {
+                  "model": "PromotionRoomType",
+                  "namespace": "hotel"
+                }
+              },
               "rooms": {
                 "cardinality": "1:N",
                 "on": {
@@ -3025,6 +3791,27 @@
                   "kind": "scalar"
                 }
               },
+              "contentType": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "data": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/bytea@1",
+                  "kind": "scalar"
+                }
+              },
+              "fileName": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
@@ -3046,6 +3833,13 @@
                   "kind": "scalar"
                 }
               },
+              "sizeBytes": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
               "sortOrder": {
                 "nullable": false,
                 "type": {
@@ -3053,8 +3847,15 @@
                   "kind": "scalar"
                 }
               },
+              "uploadedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
               "url": {
-                "nullable": false,
+                "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -3083,6 +3884,15 @@
                 "alt": {
                   "column": "alt"
                 },
+                "contentType": {
+                  "column": "contentType"
+                },
+                "data": {
+                  "column": "data"
+                },
+                "fileName": {
+                  "column": "fileName"
+                },
                 "id": {
                   "column": "id"
                 },
@@ -3092,8 +3902,14 @@
                 "roomTypeId": {
                   "column": "roomTypeId"
                 },
+                "sizeBytes": {
+                  "column": "sizeBytes"
+                },
                 "sortOrder": {
                   "column": "sortOrder"
+                },
+                "uploadedAt": {
+                  "column": "uploadedAt"
                 },
                 "url": {
                   "column": "url"
@@ -3273,6 +4089,31 @@
       },
       "public": {
         "enum": {
+          "bed_type": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "EINZELBETT",
+                "value": "EINZELBETT"
+              },
+              {
+                "name": "DOPPELBETT",
+                "value": "DOPPELBETT"
+              },
+              {
+                "name": "ZWEI_EINZELBETTEN",
+                "value": "ZWEI_EINZELBETTEN"
+              },
+              {
+                "name": "DOPPELBETT_PLUS_ZWEI",
+                "value": "DOPPELBETT_PLUS_ZWEI"
+              },
+              {
+                "name": "DREI_BETTEN",
+                "value": "DREI_BETTEN"
+              }
+            ]
+          },
           "booking_source": {
             "codecId": "pg/text@1",
             "members": [
@@ -3385,6 +4226,65 @@
               }
             ]
           },
+          "menu_kind": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "SPEISEKARTE",
+                "value": "SPEISEKARTE"
+              },
+              {
+                "name": "GAESTEVERKAUF",
+                "value": "GAESTEVERKAUF"
+              }
+            ]
+          },
+          "payment_method": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "PAY_AT_HOTEL",
+                "value": "PAY_AT_HOTEL"
+              },
+              {
+                "name": "CARD_GUARANTEE",
+                "value": "CARD_GUARANTEE"
+              }
+            ]
+          },
+          "payment_status": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "NOT_REQUIRED",
+                "value": "NOT_REQUIRED"
+              },
+              {
+                "name": "PENDING",
+                "value": "PENDING"
+              },
+              {
+                "name": "VERIFIED",
+                "value": "VERIFIED"
+              },
+              {
+                "name": "AUTHORIZED",
+                "value": "AUTHORIZED"
+              },
+              {
+                "name": "CHARGED",
+                "value": "CHARGED"
+              },
+              {
+                "name": "FAILED",
+                "value": "FAILED"
+              },
+              {
+                "name": "CANCELLED",
+                "value": "CANCELLED"
+              }
+            ]
+          },
           "pricing_mode": {
             "codecId": "pg/text@1",
             "members": [
@@ -3395,6 +4295,36 @@
               {
                 "name": "PER_PERSON",
                 "value": "PER_PERSON"
+              }
+            ]
+          },
+          "promotion_channel": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "PUBLIC",
+                "value": "PUBLIC"
+              },
+              {
+                "name": "MOBILE",
+                "value": "MOBILE"
+              }
+            ]
+          },
+          "promotion_type": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "BASIC",
+                "value": "BASIC"
+              },
+              {
+                "name": "EARLY_BOOKER",
+                "value": "EARLY_BOOKER"
+              },
+              {
+                "name": "LAST_MINUTE",
+                "value": "LAST_MINUTE"
               }
             ]
           },
@@ -3551,6 +4481,270 @@
               },
               "namespaceId": "public",
               "table": "dailyMenu"
+            }
+          },
+          "MenuCard": {
+            "fields": {
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "data": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/bytea@1",
+                  "kind": "scalar"
+                }
+              },
+              "fileName": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "restaurantId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "sizeBytes": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "slug": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "sortOrder": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "title": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "uploadedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "restaurant": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "restaurantId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Restaurant",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "data": {
+                  "column": "data"
+                },
+                "fileName": {
+                  "column": "fileName"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "restaurantId": {
+                  "column": "restaurantId"
+                },
+                "sizeBytes": {
+                  "column": "sizeBytes"
+                },
+                "slug": {
+                  "column": "slug"
+                },
+                "sortOrder": {
+                  "column": "sortOrder"
+                },
+                "title": {
+                  "column": "title"
+                },
+                "uploadedAt": {
+                  "column": "uploadedAt"
+                }
+              },
+              "namespaceId": "public",
+              "table": "menuCard"
+            }
+          },
+          "MenuItem": {
+            "fields": {
+              "active": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "description": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "menu": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "menu_kind",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
+              "name": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "price": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/numeric@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 10,
+                    "scale": 2
+                  }
+                }
+              },
+              "restaurantId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "sortOrder": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "restaurant": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "restaurantId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Restaurant",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "active": {
+                  "column": "active"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "description": {
+                  "column": "description"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "menu": {
+                  "column": "menu"
+                },
+                "name": {
+                  "column": "name"
+                },
+                "price": {
+                  "column": "price"
+                },
+                "restaurantId": {
+                  "column": "restaurantId"
+                },
+                "sortOrder": {
+                  "column": "sortOrder"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "public",
+              "table": "menuItem"
             }
           },
           "MenuTemplate": {
@@ -4087,6 +5281,16 @@
                   "prefix": "booking_dates_ordered"
                 },
                 {
+                  "expression": "\"paymentMethod\" IN ('PAY_AT_HOTEL', 'CARD_GUARANTEE')",
+                  "name": "booking_paymentMethod_check_1857449a",
+                  "prefix": "booking_paymentMethod_check"
+                },
+                {
+                  "expression": "\"paymentStatus\" IN ('NOT_REQUIRED', 'PENDING', 'VERIFIED', 'AUTHORIZED', 'CHARGED', 'FAILED', 'CANCELLED')",
+                  "name": "booking_paymentStatus_check_d1c93aff",
+                  "prefix": "booking_paymentStatus_check"
+                },
+                {
                   "expression": "\"source\" IN ('WEBSITE', 'PHONE', 'EMAIL', 'WALK_IN', 'MANUAL', 'BOOKING_COM', 'EXPEDIA', 'AIRBNB', 'OTHER')",
                   "name": "booking_source_check_0cd4d5fd",
                   "prefix": "booking_source_check"
@@ -4182,6 +5386,15 @@
                   "nativeType": "timestamptz",
                   "nullable": true
                 },
+                "discountTotal": {
+                  "codecId": "pg/numeric@1",
+                  "nativeType": "numeric",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 10,
+                    "scale": 2
+                  }
+                },
                 "externalBookingId": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -4229,6 +5442,61 @@
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": true
+                },
+                "paymentAuthorizedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "paymentChargedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "paymentCustomerRef": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "paymentMethod": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "PAY_AT_HOTEL"
+                  },
+                  "nativeType": "text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "payment_method",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "paymentMethodRef": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "paymentProvider": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "paymentStatus": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "NOT_REQUIRED"
+                  },
+                  "nativeType": "text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "payment_status",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
                 },
                 "roomsTotal": {
                   "codecId": "pg/numeric@1",
@@ -4286,7 +5554,6 @@
               },
               "foreignKeys": [
                 {
-                  "onDelete": "restrict",
                   "source": {
                     "columns": [
                       "hotelId"
@@ -4303,7 +5570,6 @@
                   }
                 },
                 {
-                  "onDelete": "restrict",
                   "source": {
                     "columns": [
                       "guestId"
@@ -4336,6 +5602,15 @@
                   ],
                   "name": "booking_hotelId_checkIn_idx_37dd233b",
                   "prefix": "booking_hotelId_checkIn_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "hotelId",
+                    "checkOut"
+                  ],
+                  "name": "booking_hotelId_checkOut_idx_ac162b13",
+                  "prefix": "booking_hotelId_checkOut_idx",
                   "unique": false
                 },
                 {
@@ -4488,7 +5763,6 @@
                   }
                 },
                 {
-                  "onDelete": "restrict",
                   "source": {
                     "columns": [
                       "serviceItemId"
@@ -4541,9 +5815,19 @@
             "bookingRoom": {
               "checks": [
                 {
+                  "expression": "\"bedType\" IN ('EINZELBETT', 'DOPPELBETT', 'ZWEI_EINZELBETTEN', 'DOPPELBETT_PLUS_ZWEI', 'DREI_BETTEN')",
+                  "name": "bookingRoom_bedType_check_e45e091c",
+                  "prefix": "bookingRoom_bedType_check"
+                },
+                {
                   "expression": "\"checkOut\" > \"checkIn\"",
                   "name": "bookingRoom_dates_ordered_895ca4da",
                   "prefix": "bookingRoom_dates_ordered"
+                },
+                {
+                  "expression": "\"mealPlanSnapshot\" IN ('ROOM_ONLY', 'BREAKFAST', 'HALF_BOARD', 'FULL_BOARD')",
+                  "name": "bookingRoom_mealPlanSnapshot_check_fb97cc4d",
+                  "prefix": "bookingRoom_mealPlanSnapshot_check"
                 },
                 {
                   "expression": "\"pricingModeSnapshot\" IN ('PER_ROOM', 'PER_PERSON')",
@@ -4560,6 +5844,17 @@
                   },
                   "nativeType": "int4",
                   "nullable": false
+                },
+                "bedType": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "bed_type",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
                 },
                 "bookingId": {
                   "codecId": "pg/int4@1",
@@ -4598,6 +5893,17 @@
                   },
                   "nativeType": "int4",
                   "nullable": false
+                },
+                "mealPlanSnapshot": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "meal_plan",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
                 },
                 "note": {
                   "codecId": "pg/text@1",
@@ -4659,7 +5965,6 @@
                   }
                 },
                 {
-                  "onDelete": "restrict",
                   "source": {
                     "columns": [
                       "roomTypeId"
@@ -4730,10 +6035,11 @@
                 {
                   "columns": [
                     "roomId",
-                    "checkIn"
+                    "checkIn",
+                    "checkOut"
                   ],
-                  "name": "bookingRoom_roomId_checkIn_idx_35b569d4",
-                  "prefix": "bookingRoom_roomId_checkIn_idx",
+                  "name": "bookingRoom_roomId_checkIn_checkOut_idx_f5abf4de",
+                  "prefix": "bookingRoom_roomId_checkIn_checkOut_idx",
                   "unique": false
                 },
                 {
@@ -4834,7 +6140,6 @@
                   }
                 },
                 {
-                  "onDelete": "restrict",
                   "source": {
                     "columns": [
                       "guestId"
@@ -4978,6 +6283,13 @@
               ]
             },
             "cancellationPolicy": {
+              "checks": [
+                {
+                  "expression": "\"noShowFeePercent\" IS NULL OR (\"noShowFeePercent\" >= 0 AND \"noShowFeePercent\" <= 100)",
+                  "name": "cancellationPolicy_noShow_range_41e91451",
+                  "prefix": "cancellationPolicy_noShow_range"
+                }
+              ],
               "columns": {
                 "active": {
                   "codecId": "pg/bool@1",
@@ -5016,6 +6328,15 @@
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": false
+                },
+                "noShowFeePercent": {
+                  "codecId": "pg/numeric@1",
+                  "nativeType": "numeric",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 5,
+                    "scale": 2
+                  }
                 }
               },
               "foreignKeys": [
@@ -5671,6 +6992,464 @@
                 }
               ]
             },
+            "paymentEvent": {
+              "columns": {
+                "bookingId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
+                "eventId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "eventType": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "processedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "provider": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "result": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "setNull",
+                  "source": {
+                    "columns": [
+                      "bookingId"
+                    ],
+                    "namespaceId": "hotel",
+                    "tableName": "paymentEvent"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "hotel",
+                    "tableName": "booking"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "bookingId"
+                  ],
+                  "name": "paymentEvent_bookingId_idx_17848f4a",
+                  "prefix": "paymentEvent_bookingId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "provider",
+                    "eventId"
+                  ]
+                }
+              ]
+            },
+            "promotion": {
+              "checks": [
+                {
+                  "expression": "\"channel\" IN ('PUBLIC', 'MOBILE')",
+                  "name": "promotion_channel_check_d475113f",
+                  "prefix": "promotion_channel_check"
+                },
+                {
+                  "expression": "\"type\" IN ('BASIC', 'EARLY_BOOKER', 'LAST_MINUTE')",
+                  "name": "promotion_type_check_8763061b",
+                  "prefix": "promotion_type_check"
+                }
+              ],
+              "columns": {
+                "active": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": true
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
+                "bookingFrom": {
+                  "codecId": "pg/date-temporal@1",
+                  "nativeType": "date",
+                  "nullable": true
+                },
+                "bookingTo": {
+                  "codecId": "pg/date-temporal@1",
+                  "nativeType": "date",
+                  "nullable": true
+                },
+                "channel": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "PUBLIC"
+                  },
+                  "nativeType": "text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "promotion_channel",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "code": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "description": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "discountPercent": {
+                  "codecId": "pg/numeric@1",
+                  "nativeType": "numeric",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 5,
+                    "scale": 2
+                  }
+                },
+                "earlyBookerDays": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
+                "hotelId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "lastMinuteDays": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
+                "minStayNights": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
+                "name": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "stayFrom": {
+                  "codecId": "pg/date-temporal@1",
+                  "nativeType": "date",
+                  "nullable": true
+                },
+                "stayTo": {
+                  "codecId": "pg/date-temporal@1",
+                  "nativeType": "date",
+                  "nullable": true
+                },
+                "type": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "promotion_type",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "hotelId"
+                    ],
+                    "namespaceId": "hotel",
+                    "tableName": "promotion"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "hotel",
+                    "tableName": "hotel"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "hotelId",
+                    "active"
+                  ],
+                  "name": "promotion_hotelId_active_idx_f1412091",
+                  "prefix": "promotion_hotelId_active_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "hotelId"
+                  ],
+                  "name": "promotion_hotelId_idx_462a16a4",
+                  "prefix": "promotion_hotelId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "hotelId",
+                    "code"
+                  ]
+                }
+              ]
+            },
+            "promotionRatePlan": {
+              "columns": {
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "promotionId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "ratePlanId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "promotionId"
+                    ],
+                    "namespaceId": "hotel",
+                    "tableName": "promotionRatePlan"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "hotel",
+                    "tableName": "promotion"
+                  }
+                },
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "ratePlanId"
+                    ],
+                    "namespaceId": "hotel",
+                    "tableName": "promotionRatePlan"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "hotel",
+                    "tableName": "ratePlan"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "promotionId"
+                  ],
+                  "name": "promotionRatePlan_promotionId_idx_61ce0068",
+                  "prefix": "promotionRatePlan_promotionId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "ratePlanId"
+                  ],
+                  "name": "promotionRatePlan_ratePlanId_idx_18cf7a69",
+                  "prefix": "promotionRatePlan_ratePlanId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "promotionId",
+                    "ratePlanId"
+                  ]
+                }
+              ]
+            },
+            "promotionRoomType": {
+              "columns": {
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "promotionId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "roomTypeId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "promotionId"
+                    ],
+                    "namespaceId": "hotel",
+                    "tableName": "promotionRoomType"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "hotel",
+                    "tableName": "promotion"
+                  }
+                },
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "roomTypeId"
+                    ],
+                    "namespaceId": "hotel",
+                    "tableName": "promotionRoomType"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "hotel",
+                    "tableName": "roomType"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "promotionId"
+                  ],
+                  "name": "promotionRoomType_promotionId_idx_61ce0068",
+                  "prefix": "promotionRoomType_promotionId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "roomTypeId"
+                  ],
+                  "name": "promotionRoomType_roomTypeId_idx_0c4e04bc",
+                  "prefix": "promotionRoomType_roomTypeId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "promotionId",
+                    "roomTypeId"
+                  ]
+                }
+              ]
+            },
             "ratePlan": {
               "checks": [
                 {
@@ -5698,6 +7477,15 @@
                   "codecId": "pg/int4@1",
                   "nativeType": "int4",
                   "nullable": true
+                },
+                "cardGuaranteeRequired": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
                 },
                 "channelCode": {
                   "codecId": "pg/text@1",
@@ -5746,7 +7534,7 @@
                   "codecId": "pg/text@1",
                   "default": {
                     "kind": "literal",
-                    "value": "BREAKFAST"
+                    "value": "ROOM_ONLY"
                   },
                   "nativeType": "text",
                   "nullable": false,
@@ -5880,7 +7668,7 @@
                 "date": {
                   "codecId": "pg/date-temporal@1",
                   "nativeType": "date",
-                  "nullable": false
+                  "nullable": true
                 },
                 "id": {
                   "codecId": "pg/int4@1",
@@ -5946,6 +7734,17 @@
               "indexes": [
                 {
                   "columns": [
+                    "ratePlanId",
+                    "roomTypeId",
+                    "occupancy"
+                  ],
+                  "name": "ratePrice_base_unique_fa612b53",
+                  "prefix": "ratePrice_base_unique",
+                  "unique": true,
+                  "where": "\"date\" IS NULL"
+                },
+                {
+                  "columns": [
                     "ratePlanId"
                   ],
                   "name": "ratePrice_ratePlanId_idx_18cf7a69",
@@ -5989,6 +7788,16 @@
             "room": {
               "checks": [
                 {
+                  "expression": "\"bedType\" IN ('EINZELBETT', 'DOPPELBETT', 'ZWEI_EINZELBETTEN', 'DOPPELBETT_PLUS_ZWEI', 'DREI_BETTEN')",
+                  "name": "room_bedType_check_e45e091c",
+                  "prefix": "room_bedType_check"
+                },
+                {
+                  "expression": "\"maxOccupancy\" >= 1",
+                  "name": "room_maxOccupancy_positive_4567c694",
+                  "prefix": "room_maxOccupancy_positive"
+                },
+                {
                   "expression": "\"status\" IN ('CLEAN', 'DIRTY', 'INSPECTED', 'OUT_OF_SERVICE')",
                   "name": "room_status_check_b5dad1ea",
                   "prefix": "room_status_check"
@@ -6003,6 +7812,22 @@
                   },
                   "nativeType": "bool",
                   "nullable": false
+                },
+                "bedConfiguration": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "bedType": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "bed_type",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
                 },
                 "createdAt": {
                   "codecId": "pg/timestamptz-temporal@1",
@@ -6029,6 +7854,11 @@
                     "expression": "autoincrement()",
                     "kind": "function"
                   },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "maxOccupancy": {
+                  "codecId": "pg/int4@1",
                   "nativeType": "int4",
                   "nullable": false
                 },
@@ -6118,6 +7948,16 @@
                 },
                 {
                   "columns": [
+                    "roomTypeId",
+                    "active",
+                    "maxOccupancy"
+                  ],
+                  "name": "room_roomTypeId_active_maxOccupancy_idx_8f0e25e9",
+                  "prefix": "room_roomTypeId_active_maxOccupancy_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
                     "roomTypeId"
                   ],
                   "name": "room_roomTypeId_idx_0c4e04bc",
@@ -6171,7 +8011,7 @@
                   "codecId": "pg/bool@1",
                   "default": {
                     "kind": "literal",
-                    "value": true
+                    "value": false
                   },
                   "nativeType": "bool",
                   "nullable": false
@@ -6435,6 +8275,21 @@
                   "nativeType": "text",
                   "nullable": true
                 },
+                "contentType": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "data": {
+                  "codecId": "pg/bytea@1",
+                  "nativeType": "bytea",
+                  "nullable": true
+                },
+                "fileName": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "id": {
                   "codecId": "pg/int4@1",
                   "default": {
@@ -6458,6 +8313,11 @@
                   "nativeType": "int4",
                   "nullable": false
                 },
+                "sizeBytes": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
                 "sortOrder": {
                   "codecId": "pg/int4@1",
                   "default": {
@@ -6467,10 +8327,15 @@
                   "nativeType": "int4",
                   "nullable": false
                 },
+                "uploadedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
                 "url": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
-                  "nullable": false
+                  "nullable": true
                 }
               },
               "foreignKeys": [
@@ -6499,6 +8364,15 @@
                   ],
                   "name": "roomTypeImage_roomTypeId_idx_0c4e04bc",
                   "prefix": "roomTypeImage_roomTypeId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "roomTypeId",
+                    "isPrimary"
+                  ],
+                  "name": "roomTypeImage_roomTypeId_isPrimary_idx_ba36f106",
+                  "prefix": "roomTypeImage_roomTypeId_isPrimary_idx",
                   "unique": false
                 },
                 {
@@ -6770,6 +8644,261 @@
                   ]
                 }
               ]
+            },
+            "menuCard": {
+              "columns": {
+                "createdAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "data": {
+                  "codecId": "pg/bytea@1",
+                  "nativeType": "bytea",
+                  "nullable": true
+                },
+                "fileName": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "restaurantId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "sizeBytes": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
+                "slug": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "sortOrder": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 0
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "title": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "uploadedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "restaurantId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "menuCard"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "restaurant"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "restaurantId"
+                  ],
+                  "name": "menuCard_restaurantId_idx_cf3ee7d0",
+                  "prefix": "menuCard_restaurantId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "restaurantId",
+                    "sortOrder"
+                  ],
+                  "name": "menuCard_restaurantId_sortOrder_idx_6ecc974f",
+                  "prefix": "menuCard_restaurantId_sortOrder_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "restaurantId",
+                    "slug"
+                  ]
+                }
+              ]
+            },
+            "menuItem": {
+              "checks": [
+                {
+                  "expression": "\"menu\" IN ('SPEISEKARTE', 'GAESTEVERKAUF')",
+                  "name": "menuItem_menu_check_2cc72902",
+                  "prefix": "menuItem_menu_check"
+                },
+                {
+                  "expression": "\"price\" >= 0",
+                  "name": "menuItem_price_nonneg_0b66b9e8",
+                  "prefix": "menuItem_price_nonneg"
+                }
+              ],
+              "columns": {
+                "active": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": true
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "description": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "menu": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "menu_kind",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "name": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "price": {
+                  "codecId": "pg/numeric@1",
+                  "nativeType": "numeric",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 10,
+                    "scale": 2
+                  }
+                },
+                "restaurantId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "sortOrder": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 0
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "restaurantId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "menuItem"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "restaurant"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "restaurantId"
+                  ],
+                  "name": "menuItem_restaurantId_idx_cf3ee7d0",
+                  "prefix": "menuItem_restaurantId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "restaurantId",
+                    "menu",
+                    "active",
+                    "sortOrder"
+                  ],
+                  "name": "menuItem_restaurantId_menu_active_sortOrder_idx_8a9556c8",
+                  "prefix": "menuItem_restaurantId_menu_active_sortOrder_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
             },
             "menuTemplate": {
               "columns": {
@@ -7112,6 +9241,16 @@
             }
           },
           "valueSet": {
+            "bed_type": {
+              "kind": "valueSet",
+              "values": [
+                "EINZELBETT",
+                "DOPPELBETT",
+                "ZWEI_EINZELBETTEN",
+                "DOPPELBETT_PLUS_ZWEI",
+                "DREI_BETTEN"
+              ]
+            },
             "booking_source": {
               "kind": "valueSet",
               "values": [
@@ -7155,11 +9294,52 @@
                 "FULL_BOARD"
               ]
             },
+            "menu_kind": {
+              "kind": "valueSet",
+              "values": [
+                "SPEISEKARTE",
+                "GAESTEVERKAUF"
+              ]
+            },
+            "payment_method": {
+              "kind": "valueSet",
+              "values": [
+                "PAY_AT_HOTEL",
+                "CARD_GUARANTEE"
+              ]
+            },
+            "payment_status": {
+              "kind": "valueSet",
+              "values": [
+                "NOT_REQUIRED",
+                "PENDING",
+                "VERIFIED",
+                "AUTHORIZED",
+                "CHARGED",
+                "FAILED",
+                "CANCELLED"
+              ]
+            },
             "pricing_mode": {
               "kind": "valueSet",
               "values": [
                 "PER_ROOM",
                 "PER_PERSON"
+              ]
+            },
+            "promotion_channel": {
+              "kind": "valueSet",
+              "values": [
+                "PUBLIC",
+                "MOBILE"
+              ]
+            },
+            "promotion_type": {
+              "kind": "valueSet",
+              "values": [
+                "BASIC",
+                "EARLY_BOOKER",
+                "LAST_MINUTE"
               ]
             },
             "room_status": {
@@ -7187,7 +9367,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "494ce199e551d31dadf0097d595f126561f193c830b79cf0e1205734f5805f45"
+    "storageHash": "502c11bb190331d01c50670a1ae835808ac8389177aa52d75ae02137f6c52779"
   },
   "capabilities": {
     "postgres": {

@@ -233,13 +233,35 @@ export default function RoomTypesPage() {
       <PageIntro
         eyebrow="Zimmer"
         title="Zimmerarten"
-        description="Kategorien, die Gäste buchen. Konkrete Zimmer werden einer Zimmerart zugeordnet."
+        description="Kategorien, die Gäste buchen. Hier die Texte und Eckdaten, Bilder und Ausstattung in den eigenen Bereichen."
         action={
           hotelReady && editingId === null ? (
             <Button onClick={() => openForm()}>+ Neue Zimmerart</Button>
           ) : null
         }
       />
+
+      {/* Die Zimmerpräsentation besteht aus drei Teilen. Physische Zimmer mit
+          Nummer, Bettart und Belegung bleiben davon getrennt. */}
+      <nav className="mt-6 flex flex-wrap gap-2 text-sm">
+        <span className="rounded-full bg-[#315c45] px-4 py-2 font-semibold text-white">
+          Allgemein
+        </span>
+
+        <a
+          href="/admin/hotel/zimmerarten/bilder"
+          className="rounded-full border border-[#211f1b]/15 bg-white px-4 py-2 font-semibold transition hover:border-[#315c45]"
+        >
+          Bilder
+        </a>
+
+        <a
+          href="/admin/hotel/ausstattung"
+          className="rounded-full border border-[#211f1b]/15 bg-white px-4 py-2 font-semibold transition hover:border-[#315c45]"
+        >
+          Ausstattung
+        </a>
+      </nav>
 
       <div className="mt-8 space-y-3">
         {!loading && !hotelReady && <HotelMissing />}

@@ -1,0 +1,164 @@
+[
+  {
+    "id": "table.paymentEvent",
+    "label": "Create table \"paymentEvent\"",
+    "summary": "Creates table \"paymentEvent\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "table",
+        "name": "paymentEvent"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"paymentEvent\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"paymentEvent\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"paymentEvent\"",
+        "sql": "CREATE TABLE \"hotel\".\"paymentEvent\" (\n  \"bookingId\" int4,\n  \"eventId\" text NOT NULL,\n  \"eventType\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"processedAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"provider\" text NOT NULL,\n  \"result\" text,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"paymentEvent\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"paymentEvent\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.paymentEvent.paymentEvent_provider_eventId_key",
+    "label": "Add unique constraint on \"paymentEvent\" (provider, eventId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "unique",
+        "name": "paymentEvent_provider_eventId_key",
+        "table": "paymentEvent"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"paymentEvent_provider_eventId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "paymentEvent_provider_eventId_key",
+          "hotel",
+          "\"hotel\".\"paymentEvent\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"paymentEvent_provider_eventId_key\"",
+        "sql": "ALTER TABLE \"hotel\".\"paymentEvent\" ADD CONSTRAINT \"paymentEvent_provider_eventId_key\" UNIQUE (\"provider\", \"eventId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"paymentEvent_provider_eventId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "paymentEvent_provider_eventId_key",
+          "hotel",
+          "\"hotel\".\"paymentEvent\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.paymentEvent.paymentEvent_bookingId_idx_17848f4a",
+    "label": "Create index \"paymentEvent_bookingId_idx_17848f4a\" on \"paymentEvent\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "paymentEvent_bookingId_idx_17848f4a",
+        "table": "paymentEvent"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"paymentEvent_bookingId_idx_17848f4a\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"paymentEvent_bookingId_idx_17848f4a\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"paymentEvent_bookingId_idx_17848f4a\"",
+        "sql": "CREATE INDEX \"paymentEvent_bookingId_idx_17848f4a\" ON \"hotel\".\"paymentEvent\" (\"bookingId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"paymentEvent_bookingId_idx_17848f4a\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"paymentEvent_bookingId_idx_17848f4a\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.paymentEvent.paymentEvent_bookingId_fkey",
+    "label": "Add foreign key \"paymentEvent_bookingId_fkey\" on \"paymentEvent\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "paymentEvent_bookingId_fkey",
+        "table": "paymentEvent"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"paymentEvent_bookingId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "paymentEvent_bookingId_fkey",
+          "hotel",
+          "\"hotel\".\"paymentEvent\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"paymentEvent_bookingId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"paymentEvent\"\nADD CONSTRAINT \"paymentEvent_bookingId_fkey\"\nFOREIGN KEY (\"bookingId\")\nREFERENCES \"hotel\".\"booking\" (\"id\")\nON DELETE SET NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"paymentEvent_bookingId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "paymentEvent_bookingId_fkey",
+          "hotel",
+          "\"hotel\".\"paymentEvent\""
+        ]
+      }
+    ]
+  }
+]

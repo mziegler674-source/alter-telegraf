@@ -1,0 +1,86 @@
+[
+  {
+    "id": "column.hotel.bookingRoom.bedType",
+    "label": "Add column \"bedType\" to \"bookingRoom\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "column",
+        "name": "bedType",
+        "table": "bookingRoom"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"bedType\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "bookingRoom",
+          "bedType"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"bedType\"",
+        "sql": "ALTER TABLE \"hotel\".\"bookingRoom\" ADD COLUMN \"bedType\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"bedType\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "bookingRoom",
+          "bedType"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "checkConstraint.bookingRoom.bookingRoom_bedType_check_e45e091c",
+    "label": "Add check constraint \"bookingRoom_bedType_check_e45e091c\" on \"bookingRoom\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "checkConstraint",
+        "name": "bookingRoom_bedType_check_e45e091c",
+        "table": "bookingRoom"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"bookingRoom_bedType_check_e45e091c\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bookingRoom_bedType_check_e45e091c",
+          "hotel",
+          "\"hotel\".\"bookingRoom\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"bookingRoom_bedType_check_e45e091c\"",
+        "sql": "ALTER TABLE \"hotel\".\"bookingRoom\" ADD CONSTRAINT \"bookingRoom_bedType_check_e45e091c\" CHECK (\"bedType\" IN ('EINZELBETT', 'DOPPELBETT', 'ZWEI_EINZELBETTEN', 'DOPPELBETT_PLUS_ZWEI', 'DREI_BETTEN'))"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"bookingRoom_bedType_check_e45e091c\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bookingRoom_bedType_check_e45e091c",
+          "hotel",
+          "\"hotel\".\"bookingRoom\""
+        ]
+      }
+    ]
+  }
+]

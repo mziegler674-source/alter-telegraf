@@ -12,14 +12,19 @@ import {
   readEnum,
   readId,
   readInt,
+  readRequiredInt,
   readRequiredText,
   readText,
-  requireAdmin,
+  requireHotelAdmin,
   requireHotel,
 } from "@/lib/hotel/admin-api";
+import { BED_TYPES, BED_TYPE_LABELS } from "@/lib/hotel/availability";
 import { ROOM_STATUSES } from "@/lib/hotel/constants";
 import { db } from "@/prisma/db";
 
+// Vom Betreiber bearbeitbare Felder. Bettart und maximale Belegung sind
+// bewusst NICHT dabei: sie beschreiben die feste Beschaffenheit des Zimmers
+// und werden ueber den Seed gepflegt, nicht ueber die Oberflaeche.
 async function parseRoom(hotelId: number, body: Body) {
   const roomTypeId = readId(body, "roomTypeId");
   const roomType = await db.orm.hotel.RoomType.first({ id: roomTypeId, hotelId });
@@ -35,6 +40,18 @@ async function parseRoom(hotelId: number, body: Body) {
     status: readEnum(body, "status", "Status", ROOM_STATUSES),
     notes: readText(body, "notes", "Notizen", { max: 1000 }),
     active: readBool(body, "active"),
+  };
+}
+
+// Nur fuer das Anlegen: die feste Beschaffenheit des Zimmers. Wird von der
+// Oberflaeche nicht angeboten, aber vom Seed benoetigt.
+function parseFixedRoomData(body: Body) {
+  const bedType = readEnum(body, "bedType", "Bettart", BED_TYPES);
+
+  return {
+    bedType,
+    maxOccupancy: readRequiredInt(body, "maxOccupancy", "Maximale Belegung", { min: 1, max: 10 }),
+    bedConfiguration: BED_TYPE_LABELS[bedType],
   };
 }
 
@@ -58,7 +75,7 @@ async function assertNumberFree(hotelId: number, number: string, exceptId?: numb
 
 export async function GET() {
   return handle("Rooms GET", async () => {
-    await requireAdmin();
+    await requireHotelAdmin();
 
     const hotel = await getHotel();
 
@@ -85,13 +102,15 @@ export async function GET() {
 
 export async function POST(request: Request) {
   return handle("Rooms POST", async () => {
-    await requireAdmin();
+    await requireHotelAdmin();
     const hotel = await requireHotel();
 
-    const data = await parseRoom(hotel.id, await readBody(request));
+    const body = await readBody(request);
+    const data = await parseRoom(hotel.id, body);
+    const fixed = parseFixedRoomData(body);
     await assertNumberFree(hotel.id, data.number);
 
-    const room = await db.orm.hotel.Room.create({ ...data, hotelId: hotel.id });
+    const room = await db.orm.hotel.Room.create({ ...data, ...fixed, hotelId: hotel.id });
 
     return NextResponse.json({ room }, { status: 201 });
   });
@@ -99,7 +118,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   return handle("Rooms PATCH", async () => {
-    await requireAdmin();
+    await requireHotelAdmin();
     const hotel = await requireHotel();
 
     const body = await readBody(request);
@@ -122,7 +141,7 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   return handle("Rooms DELETE", async () => {
-    await requireAdmin();
+    await requireHotelAdmin();
     const hotel = await requireHotel();
 
     const id = readId(await readBody(request));

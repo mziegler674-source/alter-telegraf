@@ -8,22 +8,22 @@ import { db } from "@/prisma/db";
 const moduleDescriptions: Record<string, string> = {
   "/admin/hotel/einstellungen": "Stammdaten, Kontakt, Check-in/-out und Rezeptionszeiten.",
   "/admin/hotel/zimmerarten": "Kategorien mit Belegung, Preisart und Frühstück.",
-  "/admin/hotel/zimmer": "Konkrete Zimmer mit Nummer, Etage und Reinigungsstatus.",
-  "/admin/hotel/ausstattung": "Ausstattungskatalog und Zuordnung zu Zimmerarten.",
+  "/admin/hotel/zimmer": "Konkrete Zimmer mit Nummer, Etage, Bettenkonfiguration und Status.",
+  "/admin/hotel/preise": "Rate Plans mit Verpflegung und Tagespreise je Zimmerart.",
+  "/admin/hotel/promotions": "Basic, Early Booker und Last Minute mit Rabatt und Zeiträumen.",
   "/admin/hotel/buchungen": "Buchungen mit mehreren Zimmern, Gästen und Nächten.",
   "/admin/hotel/gaeste": "Gästestammdaten und Meldedaten.",
-  "/admin/hotel/kalender": "Belegungs- und Verfügbarkeitskalender.",
-  "/admin/hotel/preise": "Rate Plans und Tagespreise je Zimmerart.",
+  "/admin/hotel/kalender": "Belegungskalender auf Ebene der physischen Zimmer.",
 };
 
 export default async function HotelOverviewPage() {
   const hotel = await getHotel();
 
-  const [roomTypes, rooms, amenityCount, bookingCount] = hotel
+  const [roomTypes, rooms, ratePlanCount, bookingCount] = hotel
     ? await Promise.all([
         db.orm.hotel.RoomType.where({ hotelId: hotel.id }).select("id", "active").all(),
         db.orm.hotel.Room.where({ hotelId: hotel.id }).select("id", "status", "active").all(),
-        db.orm.hotel.Amenity.where({ hotelId: hotel.id }).aggregate((a) => ({ n: a.count() })),
+        db.orm.hotel.RatePlan.where({ hotelId: hotel.id }).aggregate((a) => ({ n: a.count() })),
         db.orm.hotel.Booking.where({ hotelId: hotel.id }).aggregate((a) => ({ n: a.count() })),
       ])
     : [[], [], { n: 0 }, { n: 0 }];
@@ -33,7 +33,7 @@ export default async function HotelOverviewPage() {
   const stats = [
     { label: "Zimmerarten", value: roomTypes.length, sub: `${roomTypes.filter((r) => r.active).length} aktiv` },
     { label: "Zimmer", value: rooms.length, sub: `${activeRooms.length} aktiv` },
-    { label: "Ausstattung", value: amenityCount.n, sub: "Merkmale" },
+    { label: "Rate Plans", value: ratePlanCount.n, sub: "Preisstrategien" },
     { label: "Buchungen", value: bookingCount.n, sub: "gesamt" },
   ];
 
@@ -42,7 +42,7 @@ export default async function HotelOverviewPage() {
       <PageIntro
         eyebrow="Übersicht"
         title={hotel ? hotel.name : "Hotel-PMS"}
-        description="Zentrale Verwaltung für Zimmer, Ausstattung und künftig Buchungen des Hotels."
+        description="Zentrale Verwaltung für Zimmer, Preise und künftig Buchungen des Hotels."
       />
 
       {!hotel && (

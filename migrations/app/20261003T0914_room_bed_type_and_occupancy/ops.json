@@ -1,0 +1,347 @@
+[
+  {
+    "id": "column.hotel.room.bedType",
+    "label": "Add column \"bedType\" to \"room\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "column",
+        "name": "bedType",
+        "table": "room"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"bedType\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "room",
+          "bedType"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"bedType\"",
+        "sql": "ALTER TABLE \"hotel\".\"room\" ADD COLUMN \"bedType\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"bedType\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "room",
+          "bedType"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "backfill-room-bedType",
+    "label": "Bettart je physischem Zimmer setzen",
+    "operationClass": "data",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Bettart je physischem Zimmer setzen",
+        "sql": "UPDATE \"hotel\".\"room\" SET \"bedType\" = CASE WHEN \"number\" IN ('11', '12', '14', '17', '18', '19', '20') THEN 'EINZELBETT' WHEN \"number\" IN ('15', '16', '23', '25') THEN 'DOPPELBETT' WHEN \"number\" IN ('27', '28') THEN 'ZWEI_EINZELBETTEN' WHEN \"number\" IN ('21', '22', '24') THEN 'DOPPELBETT_PLUS_ZWEI' WHEN \"number\" IN ('26') THEN 'DREI_BETTEN' END WHERE \"bedType\" IS NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "Keine Zimmer ohne bedType",
+        "sql": "SELECT NOT EXISTS (SELECT 1 FROM \"hotel\".\"room\" WHERE \"bedType\" IS NULL) AS \"result\""
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.setNotNull.room.bedType",
+    "label": "Set NOT NULL on \"room\".\"bedType\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "column",
+        "name": "bedType",
+        "table": "room"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"bedType\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "room",
+          "bedType"
+        ]
+      },
+      {
+        "description": "ensure no NULL values in \"bedType\"",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"hotel\".\"room\" WHERE \"bedType\" IS NULL) AS \"result\"",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "set NOT NULL on \"bedType\"",
+        "sql": "ALTER TABLE \"hotel\".\"room\" ALTER COLUMN \"bedType\" SET NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"bedType\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "hotel",
+          "room",
+          "bedType",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.hotel.room.maxOccupancy",
+    "label": "Add column \"maxOccupancy\" to \"room\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "column",
+        "name": "maxOccupancy",
+        "table": "room"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"maxOccupancy\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "room",
+          "maxOccupancy"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"maxOccupancy\"",
+        "sql": "ALTER TABLE \"hotel\".\"room\" ADD COLUMN \"maxOccupancy\" int4"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"maxOccupancy\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "room",
+          "maxOccupancy"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "backfill-room-maxOccupancy",
+    "label": "Maximale Belegung je physischem Zimmer setzen",
+    "operationClass": "data",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Maximale Belegung je physischem Zimmer setzen",
+        "sql": "UPDATE \"hotel\".\"room\" SET \"maxOccupancy\" = CASE WHEN \"number\" IN ('11', '12', '14', '17', '18', '19', '20') THEN 1 WHEN \"number\" IN ('15', '16', '23', '25', '27', '28') THEN 2 WHEN \"number\" IN ('26') THEN 3 WHEN \"number\" IN ('21', '22', '24') THEN 4 END WHERE \"maxOccupancy\" IS NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "Keine Zimmer ohne maxOccupancy",
+        "sql": "SELECT NOT EXISTS (SELECT 1 FROM \"hotel\".\"room\" WHERE \"maxOccupancy\" IS NULL) AS \"result\""
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.setNotNull.room.maxOccupancy",
+    "label": "Set NOT NULL on \"room\".\"maxOccupancy\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "column",
+        "name": "maxOccupancy",
+        "table": "room"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"maxOccupancy\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "room",
+          "maxOccupancy"
+        ]
+      },
+      {
+        "description": "ensure no NULL values in \"maxOccupancy\"",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"hotel\".\"room\" WHERE \"maxOccupancy\" IS NULL) AS \"result\"",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "set NOT NULL on \"maxOccupancy\"",
+        "sql": "ALTER TABLE \"hotel\".\"room\" ALTER COLUMN \"maxOccupancy\" SET NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"maxOccupancy\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "hotel",
+          "room",
+          "maxOccupancy",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "checkConstraint.room.room_bedType_check_e45e091c",
+    "label": "Add check constraint \"room_bedType_check_e45e091c\" on \"room\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "checkConstraint",
+        "name": "room_bedType_check_e45e091c",
+        "table": "room"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"room_bedType_check_e45e091c\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "room_bedType_check_e45e091c",
+          "hotel",
+          "\"hotel\".\"room\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"room_bedType_check_e45e091c\"",
+        "sql": "ALTER TABLE \"hotel\".\"room\" ADD CONSTRAINT \"room_bedType_check_e45e091c\" CHECK (\"bedType\" IN ('EINZELBETT', 'DOPPELBETT', 'ZWEI_EINZELBETTEN', 'DOPPELBETT_PLUS_ZWEI', 'DREI_BETTEN'))"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"room_bedType_check_e45e091c\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "room_bedType_check_e45e091c",
+          "hotel",
+          "\"hotel\".\"room\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "checkConstraint.room.room_maxOccupancy_positive_4567c694",
+    "label": "Add check constraint \"room_maxOccupancy_positive_4567c694\" on \"room\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "checkConstraint",
+        "name": "room_maxOccupancy_positive_4567c694",
+        "table": "room"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"room_maxOccupancy_positive_4567c694\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "room_maxOccupancy_positive_4567c694",
+          "hotel",
+          "\"hotel\".\"room\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"room_maxOccupancy_positive_4567c694\"",
+        "sql": "ALTER TABLE \"hotel\".\"room\" ADD CONSTRAINT \"room_maxOccupancy_positive_4567c694\" CHECK (\"maxOccupancy\" >= 1)"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"room_maxOccupancy_positive_4567c694\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "room_maxOccupancy_positive_4567c694",
+          "hotel",
+          "\"hotel\".\"room\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.room.room_roomTypeId_active_maxOccupancy_idx_8f0e25e9",
+    "label": "Create index \"room_roomTypeId_active_maxOccupancy_idx_8f0e25e9\" on \"room\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "room_roomTypeId_active_maxOccupancy_idx_8f0e25e9",
+        "table": "room"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"room_roomTypeId_active_maxOccupancy_idx_8f0e25e9\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"room_roomTypeId_active_maxOccupancy_idx_8f0e25e9\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"room_roomTypeId_active_maxOccupancy_idx_8f0e25e9\"",
+        "sql": "CREATE INDEX \"room_roomTypeId_active_maxOccupancy_idx_8f0e25e9\" ON \"hotel\".\"room\" (\"roomTypeId\", \"active\", \"maxOccupancy\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"room_roomTypeId_active_maxOccupancy_idx_8f0e25e9\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"room_roomTypeId_active_maxOccupancy_idx_8f0e25e9\""
+        ]
+      }
+    ]
+  }
+]

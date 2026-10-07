@@ -15,6 +15,7 @@ import {
   inputClass,
 } from "@/components/hotel-admin/ui";
 import { type ApiResult, apiRequest, toFormValue } from "@/lib/hotel/client";
+import { BED_TYPE_LABELS, type BedType } from "@/lib/hotel/availability";
 import {
   ROOM_STATUSES,
   ROOM_STATUS_LABELS,
@@ -25,6 +26,8 @@ type Room = {
   id: number;
   number: string;
   roomTypeId: number;
+  bedType: BedType;
+  maxOccupancy: number;
   floor: number | null;
   status: RoomStatus;
   notes: string | null;
@@ -165,15 +168,6 @@ export default function RoomsPage() {
     );
   }
 
-  function remove(room: Room) {
-    if (!window.confirm(`Zimmer ${room.number} wirklich löschen?`)) return;
-
-    run(
-      () => apiRequest("/api/admin/hotel/zimmer", "DELETE", { id: room.id }),
-      `Zimmer ${room.number} wurde gelöscht.`
-    );
-  }
-
   const noRoomTypes = hotelReady && !loading && roomTypes.length === 0;
 
   return (
@@ -181,12 +175,7 @@ export default function RoomsPage() {
       <PageIntro
         eyebrow="Zimmer"
         title="Zimmer"
-        description="Konkrete Zimmer mit Nummer, Etage und Reinigungsstatus."
-        action={
-          hotelReady && !noRoomTypes && editingId === null ? (
-            <Button onClick={() => openForm()}>+ Neues Zimmer</Button>
-          ) : null
-        }
+        description="Zimmernummer, Etage, Status und Notizen sind bearbeitbar. Bettart und maximale Belegung beschreiben die feste Beschaffenheit des Zimmers und werden nur angezeigt."
       />
 
       <div className="mt-8 space-y-3">
@@ -299,6 +288,7 @@ export default function RoomsPage() {
                 <tr>
                   <th className="px-4 py-3">Nr.</th>
                   <th className="px-4 py-3">Zimmerart</th>
+                  <th className="px-4 py-3">Betten</th>
                   <th className="px-4 py-3">Etage</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Aktiv</th>
@@ -310,6 +300,13 @@ export default function RoomsPage() {
                   <tr key={room.id} className={room.active ? "" : "bg-[#f5f1e8]/60 text-[#756f64]"}>
                     <td className="px-4 py-4 font-serif text-xl">{room.number}</td>
                     <td className="px-4 py-4">{roomTypeName(room.roomTypeId)}</td>
+                    <td className="px-4 py-4">
+                      {BED_TYPE_LABELS[room.bedType]}
+                      <span className="mt-1 block text-xs text-[#756f64]">
+                        max. {room.maxOccupancy}{" "}
+                        {room.maxOccupancy === 1 ? "Person" : "Personen"}
+                      </span>
+                    </td>
                     <td className="px-4 py-4">{room.floor ?? "–"}</td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-2">
@@ -339,9 +336,6 @@ export default function RoomsPage() {
                         </Button>
                         <Button small variant="secondary" onClick={() => toggleActive(room)} disabled={busy}>
                           {room.active ? "Deaktivieren" : "Aktivieren"}
-                        </Button>
-                        <Button small variant="danger" onClick={() => remove(room)} disabled={busy}>
-                          Löschen
                         </Button>
                       </div>
                     </td>
