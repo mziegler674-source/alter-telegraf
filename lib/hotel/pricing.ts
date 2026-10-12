@@ -71,6 +71,19 @@ export function pickDiscountPercent(nights: number, tiers: DiscountTier[]): numb
     .reduce((best, tier) => Math.max(best, tier.percent), 0);
 }
 
+/**
+ * Bereits ermittelter Rabatt eines Aufenthalts. Welche Aktion gilt,
+ * entscheidet ausschliesslich lib/hotel/promotions.ts; hier wird nur noch
+ * gerechnet.
+ */
+export type StayDiscount = {
+  /** Prozentsatz, oder 0 wenn ein Festbetrag gilt. Nur zur Anzeige. */
+  percent: number;
+  /** Rabatt in ganzen Cent. */
+  cents: number;
+  name: string | null;
+};
+
 export type StayInput = {
   nights: number;
   /** Preis pro Nacht fuer die gewaehlte Belegung, als Dezimalzahl. */
@@ -78,7 +91,7 @@ export type StayInput = {
   /** Personen, die Fruehstueck nehmen. */
   breakfastPersons: number;
   breakfastPricePerPersonNight: string;
-  discountTiers: DiscountTier[];
+  discount?: StayDiscount | null;
 };
 
 export type StayTotals = {
@@ -86,10 +99,18 @@ export type StayTotals = {
   roomsTotal: string;
   discountPercent: number;
   discountTotal: string;
+  /** Name der wirksamen Aktion, oder null. */
+  discountName: string | null;
   breakfastTotal: string;
   total: string;
 };
 
+/**
+ * Reihenfolge der Berechnung - eindeutig und in dieser Folge:
+ *   1. Zimmerpreis = Preis pro Nacht x Naechte
+ *   2. abzueglich Rabatt, immer nur auf den Zimmerpreis
+ *   3. zuzueglich Fruehstueck, nie rabattiert
+ */
 export function calculateStay(input: StayInput): StayTotals {
   if (input.nights < 1) {
     throw new Error("Der Aufenthalt muss mindestens eine Nacht umfassen.");
@@ -97,10 +118,11 @@ export function calculateStay(input: StayInput): StayTotals {
 
   const roomsTotalCents = toCents(input.pricePerNight) * input.nights;
 
-  const discountPercent = pickDiscountPercent(input.nights, input.discountTiers);
-
-  // Der Rabatt gilt nur auf den Zimmerpreis, nicht auf das Fruehstueck.
-  const discountTotalCents = Math.round((roomsTotalCents * discountPercent) / 100);
+  // Mehr als den Zimmerpreis kann kein Rabatt ausmachen.
+  const discountTotalCents = Math.max(
+    0,
+    Math.min(input.discount?.cents ?? 0, roomsTotalCents)
+  );
 
   const breakfastTotalCents =
     input.breakfastPersons > 0
@@ -110,8 +132,9 @@ export function calculateStay(input: StayInput): StayTotals {
   return {
     nights: input.nights,
     roomsTotal: fromCents(roomsTotalCents),
-    discountPercent,
+    discountPercent: discountTotalCents > 0 ? (input.discount?.percent ?? 0) : 0,
     discountTotal: fromCents(discountTotalCents),
+    discountName: discountTotalCents > 0 ? (input.discount?.name ?? null) : null,
     breakfastTotal: fromCents(breakfastTotalCents),
     total: fromCents(roomsTotalCents - discountTotalCents + breakfastTotalCents),
   };

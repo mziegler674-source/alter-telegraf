@@ -22,19 +22,32 @@ import {
   loadRoomPresentations,
 } from "@/lib/hotel/rooms";
 import {
+  type AllocBlock,
+  type AllocDemand,
+  type AllocRoom,
+  availableForRequest,
+} from "@/lib/hotel/allocation";
+import {
   BREAKFAST_SERVICE_CODE,
-  type DiscountTier,
-  LONG_STAY_CODE_PREFIX,
   calculateStay,
   nightsBetween,
   toCents,
 } from "@/lib/hotel/pricing";
 import {
+  type CodeResult,
+  type PromotionLike,
+  normalizeCode,
+  resolveDiscountWithCode,
+} from "@/lib/hotel/promotions";
+import {
   guaranteeRequirement,
   paymentProviderName,
   verifyCardSetup,
 } from "@/lib/hotel/payment/guarantee";
+import { bookingNumber } from "@/lib/hotel/booking-number";
+import { enqueueAvailabilityForBooking } from "@/lib/hotel/channel/sync";
 import { todayInHotelTimezone } from "@/lib/hotel/time";
+import { sendHotelBookingConfirmation } from "@/lib/mail/notifications";
 import { db } from "@/prisma/db";
 
 export { todayInHotelTimezone };
@@ -89,6 +102,8 @@ export type StayQuery = {
   adults: number;
   children: number;
   breakfast: boolean;
+  /** Vom Gast eingegebener Aktionscode, oder null. */
+  promotionCode: string | null;
 };
 
 export function parseStayQuery(raw: Record<string, unknown>): StayQuery {
@@ -126,7 +141,22 @@ export function parseStayQuery(raw: Record<string, unknown>): StayQuery {
     throw new HttpError(400, "Die Anzahl der Kinder ist ungültig.");
   }
 
-  return { checkIn, checkOut, adults, children, breakfast: raw.breakfast === true };
+  const promotionCode = normalizeCode(
+    typeof raw.promotionCode === "string" ? raw.promotionCode : null
+  );
+
+  if (promotionCode.length > 40) {
+    throw new HttpError(400, "Der Aktionscode ist zu lang.");
+  }
+
+  return {
+    checkIn,
+    checkOut,
+    adults,
+    children,
+    breakfast: raw.breakfast === true,
+    promotionCode: promotionCode || null,
+  };
 }
 
 async function requireHotelRow() {
@@ -139,7 +169,74 @@ async function requireHotelRow() {
   return hotel;
 }
 
-async function loadPricingContext(hotelId: number) {
+/** Datumsspalte als YYYY-MM-DD oder null. */
+const datum = (value: unknown) => (value === null || value === undefined ? null : String(value));
+
+/**
+ * Alle Rabattaktionen samt Zuordnungen. Die Langzeitrabatte sind darunter -
+ * sie sind gewoehnliche Aktionen und werden unter „Preise“ gepflegt. Eine
+ * zweite Rabattquelle gibt es nicht.
+ *
+ * Geladen werden auch INAKTIVE Aktionen. Ob eine Aktion greift, entscheidet
+ * ausschliesslich checkPromotion, und dort wird der Aktivstatus geprueft.
+ * Der Grund fuer das Mitladen: Gibt ein Gast den Code einer abgeschalteten
+ * Aktion ein, soll er erfahren, dass sie nicht mehr aktiv ist - und nicht,
+ * dass es den Code nicht gibt.
+ */
+export async function loadPromotions(hotelId: number): Promise<PromotionLike[]> {
+  const rows = await db.orm.hotel.Promotion
+    .where({ hotelId })
+    .select(
+      "id",
+      "code",
+      "name",
+      "type",
+      "channel",
+      "active",
+      "discountPercent",
+      "discountAmount",
+      "bookingFrom",
+      "bookingTo",
+      "stayFrom",
+      "stayTo",
+      "arrivalTo",
+      "departureFrom",
+      "minStayNights",
+      "maxStayNights",
+      "earlyBookerDays",
+      "lastMinuteDays",
+      "requiresCode"
+    )
+    .include("roomTypes", (r) => r.select("roomTypeId"))
+    .include("ratePlans", (r) => r.select("ratePlanId"))
+    .all();
+
+  return rows.map((row) => ({
+    id: row.id,
+    code: row.code,
+    name: row.name,
+    type: row.type,
+    channel: row.channel,
+    active: row.active,
+    discountPercent: String(row.discountPercent),
+    discountAmount: row.discountAmount === null ? null : String(row.discountAmount),
+    bookingFrom: datum(row.bookingFrom),
+    bookingTo: datum(row.bookingTo),
+    stayFrom: datum(row.stayFrom),
+    arrivalTo: datum(row.arrivalTo),
+    departureFrom: datum(row.departureFrom),
+    stayTo: datum(row.stayTo),
+    minStayNights: row.minStayNights,
+    maxStayNights: row.maxStayNights,
+    earlyBookerDays: row.earlyBookerDays,
+    lastMinuteDays: row.lastMinuteDays,
+    requiresCode: row.requiresCode,
+    roomTypeIds: row.roomTypes.map((link) => link.roomTypeId),
+    ratePlanIds: row.ratePlans.map((link) => link.ratePlanId),
+  }));
+}
+
+export async function loadPricingContext(hotelId: number) {
   const ratePlan =
     (await db.orm.hotel.RatePlan.first({ hotelId, code: "STANDARD_OHNE_FRUEHSTUECK" })) ??
     (await db.orm.hotel.RatePlan.where({ hotelId, mealPlan: "ROOM_ONLY" }).first());
@@ -155,16 +252,9 @@ async function loadPricingContext(hotelId: number) {
       .select("roomTypeId", "occupancy", "amount")
       .all(),
     db.orm.hotel.ServiceItem.first({ hotelId, code: BREAKFAST_SERVICE_CODE }),
-    db.orm.hotel.Promotion
-      .where({ hotelId, type: "BASIC", active: true })
-      .select("code", "minStayNights", "discountPercent")
-      .all(),
+    loadPromotions(hotelId),
     loadCancellationPolicy(ratePlan.id),
   ]);
-
-  const discountTiers: DiscountTier[] = promotions
-    .filter((p) => p.code.startsWith(LONG_STAY_CODE_PREFIX) && p.minStayNights)
-    .map((p) => ({ minNights: p.minStayNights as number, percent: Number(p.discountPercent) }));
 
   return {
     ratePlan,
@@ -175,41 +265,57 @@ async function loadPricingContext(hotelId: number) {
       amount: String(p.amount),
     })),
     breakfast,
-    discountTiers,
+    promotions,
   };
 }
 
-// Belegte Zimmerplaetze im Zeitraum, aufgeschluesselt nach Kategorie und
-// gewuenschter Bettart. Grundlage ist ausschliesslich BookingRoom - es wird
-// kein zusaetzlicher Zaehler gefuehrt, der auseinanderlaufen koennte.
-async function loadOccupied(checkIn: string, checkOut: string) {
+/**
+ * Bestehende Belegungen im Zeitraum, auf Ebene der einzelnen Buchungszimmer.
+ * Grundlage ist ausschliesslich BookingRoom - es wird kein zusaetzlicher
+ * Zaehler gefuehrt, der auseinanderlaufen koennte.
+ */
+export async function loadDemands(checkIn: string, checkOut: string): Promise<AllocDemand[]> {
   const from = Temporal.PlainDate.from(checkIn);
   const to = Temporal.PlainDate.from(checkOut);
 
   const overlapping = await db.orm.hotel.BookingRoom
     .where((r) => r.checkIn.lt(to))
     .where((r) => r.checkOut.gt(from))
-    .select("id", "roomTypeId", "bedType")
+    .select("id", "roomTypeId", "roomId", "bedType", "adults", "children", "checkIn", "checkOut")
     .include("booking", (b) => b.select("status"))
     .all();
 
-  const blocking = overlapping.filter((row) =>
-    (BLOCKING_STATUSES as readonly string[]).includes(String(row.booking.status))
-  );
+  return overlapping
+    .filter((row) =>
+      (BLOCKING_STATUSES as readonly string[]).includes(String(row.booking.status))
+    )
+    .map((row) => ({
+      key: String(row.id),
+      roomTypeId: row.roomTypeId,
+      persons: row.adults + row.children,
+      bedType: row.bedType,
+      roomId: row.roomId,
+      checkIn: String(row.checkIn),
+      checkOut: String(row.checkOut),
+    }));
+}
 
-  const perCategory = new Map<number, number>();
-  const perBedType = new Map<string, number>();
+/** Zeitraumbezogene Zimmersperren, die den Zeitraum beruehren. */
+export async function loadBlocks(checkIn: string, checkOut: string): Promise<AllocBlock[]> {
+  const from = Temporal.PlainDate.from(checkIn);
+  const to = Temporal.PlainDate.from(checkOut);
 
-  for (const row of blocking) {
-    perCategory.set(row.roomTypeId, (perCategory.get(row.roomTypeId) ?? 0) + 1);
+  const rows = await db.orm.hotel.RoomBlock
+    .where((b) => b.startDate.lt(to))
+    .where((b) => b.endDate.gt(from))
+    .select("roomId", "startDate", "endDate")
+    .all();
 
-    if (row.bedType) {
-      const key = `${row.roomTypeId}-${row.bedType}`;
-      perBedType.set(key, (perBedType.get(key) ?? 0) + 1);
-    }
-  }
-
-  return { perCategory, perBedType, total: blocking.length };
+  return rows.map((row) => ({
+    roomId: row.roomId,
+    startDate: String(row.startDate),
+    endDate: String(row.endDate),
+  }));
 }
 
 export type StayOffer = {
@@ -230,7 +336,72 @@ export type StayOffer = {
   roomsAvailable: number;
   bedTypes: { bedType: BedType; label: string; roomsAvailable: number }[];
   totals: ReturnType<typeof calculateStay>;
+  /** Welche Aktion wirkt und woher sie kommt. */
+  promotion: {
+    code: string;
+    name: string;
+    percent: number;
+    source: "AUTOMATIC" | "CODE";
+  } | null;
+  /** Urteil über den eingegebenen Aktionscode für diese Zimmerart. */
+  promotionCode: CodeResult;
 };
+
+export type QuoteInput = {
+  nights: number;
+  pricePerNight: string;
+  persons: number;
+  breakfast: boolean;
+  /** Preis je Person und Nacht, oder null wenn nicht angeboten. */
+  breakfastPrice: string | null;
+  promotions: PromotionLike[];
+  roomTypeId: number;
+  ratePlanId: number;
+  checkIn: string;
+  checkOut: string;
+  /** Buchungstag in der Zeitzone des Hotels. */
+  bookedOn: string;
+  /** Vom Gast eingegebener Aktionscode, oder null. */
+  promotionCode?: string | null;
+};
+
+/**
+ * Preis eines Angebots - Zimmer, Rabatt, Fruehstueck.
+ *
+ * Diese Funktion ist die einzige Stelle, an der ein Aufenthaltspreis
+ * entsteht. Buchungsstrecke und Admin-Vorschau rufen sie gleichermassen auf;
+ * eine Vorschau kann deshalb nicht von der tatsaechlichen Buchung abweichen.
+ */
+export function quoteOffer(input: QuoteInput) {
+  const roomsTotalCents = toCents(input.pricePerNight) * input.nights;
+
+  const { discount, code } = resolveDiscountWithCode(
+    input.promotions,
+    {
+      checkIn: input.checkIn,
+      checkOut: input.checkOut,
+      nights: input.nights,
+      bookedOn: input.bookedOn,
+      roomTypeId: input.roomTypeId,
+      ratePlanId: input.ratePlanId,
+      channel: "PUBLIC",
+    },
+    roomsTotalCents,
+    input.promotionCode ?? null
+  );
+
+  const totals = calculateStay({
+    nights: input.nights,
+    pricePerNight: input.pricePerNight,
+    breakfastPersons: input.breakfast && input.breakfastPrice ? input.persons : 0,
+    breakfastPricePerPersonNight: input.breakfastPrice ?? "0",
+    discount: discount
+      ? { percent: discount.percent, cents: discount.cents, name: discount.name }
+      : null,
+  });
+
+  return { discount, code, totals, roomsTotalCents };
+}
 
 /**
  * Ein Aufenthalt darf nicht in der Vergangenheit beginnen. Geprueft wird in
@@ -264,11 +435,20 @@ export async function searchStay(query: StayQuery) {
       .all(),
     db.orm.hotel.Room
       .where({ hotelId: hotel.id, active: true })
-      .select("id", "number", "roomTypeId", "bedType", "maxOccupancy", "active")
+      .select("id", "number", "roomTypeId", "bedType", "maxOccupancy", "active", "status")
       .all(),
   ]);
 
-  const occupied = await loadOccupied(query.checkIn, query.checkOut);
+  // Verfuegbarkeit auf Ebene der physischen Zimmer: Es wird geprueft, ob sich
+  // bestehende Belegungen und die Anfrage tatsaechlich auf verschiedene
+  // geeignete Zimmer verteilen lassen.
+  const [demands, blocks] = await Promise.all([
+    loadDemands(query.checkIn, query.checkOut),
+    loadBlocks(query.checkIn, query.checkOut),
+  ]);
+
+  const allocRooms: AllocRoom[] = rooms;
+  const heute = todayInHotelTimezone(hotel.timezone);
 
   // Redaktionelle Daten fuer die Zimmerkarten. Sie beeinflussen Verfuegbarkeit
   // und Preis nicht, sondern ergaenzen nur die Darstellung.
@@ -279,8 +459,18 @@ export async function searchStay(query: StayQuery) {
   const offers: StayOffer[] = [];
 
   for (const base of offersForOccupancy(roomTypes, rooms, context.prices, persons)) {
-    const used = occupied.perCategory.get(base.roomTypeId) ?? 0;
-    const roomsAvailable = base.rooms - used;
+    const roomsAvailable = availableForRequest({
+      rooms: allocRooms,
+      demands,
+      blocks,
+      request: {
+        roomTypeId: base.roomTypeId,
+        persons,
+        bedType: null,
+        checkIn: query.checkIn,
+        checkOut: query.checkOut,
+      },
+    });
 
     if (roomsAvailable < 1) continue;
 
@@ -288,12 +478,39 @@ export async function searchStay(query: StayQuery) {
       .map((option) => ({
         bedType: option.bedType,
         label: option.label,
-        roomsAvailable:
-          option.rooms - (occupied.perBedType.get(`${base.roomTypeId}-${option.bedType}`) ?? 0),
+        roomsAvailable: availableForRequest({
+          rooms: allocRooms,
+          demands,
+          blocks,
+          request: {
+            roomTypeId: base.roomTypeId,
+            persons,
+            bedType: option.bedType,
+            checkIn: query.checkIn,
+            checkOut: query.checkOut,
+          },
+        }),
       }))
       .filter((option) => option.roomsAvailable > 0);
 
     if (bedTypes.length === 0) continue;
+
+    // Rabatt je Kategorie: Aktionen koennen auf Zimmerarten eingeschraenkt
+    // sein, deshalb wird hier und nicht einmal pauschal entschieden.
+    const angebot = quoteOffer({
+      nights,
+      pricePerNight: base.pricePerNight,
+      persons,
+      breakfast: query.breakfast,
+      breakfastPrice: breakfastPrice,
+      promotions: context.promotions,
+      roomTypeId: base.roomTypeId,
+      ratePlanId: context.ratePlan.id,
+      checkIn: query.checkIn,
+      checkOut: query.checkOut,
+      bookedOn: heute,
+      promotionCode: query.promotionCode,
+    });
 
     const roomType = roomTypes.find((r) => r.id === base.roomTypeId);
     const presentation = presentations.find((p) => p.roomTypeId === base.roomTypeId);
@@ -313,13 +530,16 @@ export async function searchStay(query: StayQuery) {
       pricePerNight: base.pricePerNight,
       roomsAvailable,
       bedTypes,
-      totals: calculateStay({
-        nights,
-        pricePerNight: base.pricePerNight,
-        breakfastPersons: query.breakfast && breakfastPrice ? persons : 0,
-        breakfastPricePerPersonNight: breakfastPrice ?? "0",
-        discountTiers: context.discountTiers,
-      }),
+      totals: angebot.totals,
+      promotion: angebot.discount
+        ? {
+            code: angebot.discount.code,
+            name: angebot.discount.name,
+            percent: angebot.discount.percent,
+            source: angebot.discount.source,
+          }
+        : null,
+      promotionCode: angebot.code,
     });
   }
 
@@ -332,7 +552,9 @@ export async function searchStay(query: StayQuery) {
     persons,
     breakfast: query.breakfast,
     breakfastPricePerPersonNight: breakfastPrice,
-    discountTiers: context.discountTiers,
+    // Urteil über den Aktionscode. Gilt er für mindestens eine Zimmerart,
+    // zählt das als angewendet; sonst gewinnt die erste Begründung.
+    promotionCode: codeStatus(query.promotionCode, offers),
     // Die Stornobedingungen stammen aus der aktiven Richtlinie. Ändert der
     // Betrieb sie, ändert sich dieser Text ohne Codeänderung mit.
     cancellation: context.cancellationPolicy
@@ -346,6 +568,31 @@ export async function searchStay(query: StayQuery) {
     guarantee: await guaranteeRequirement(context.ratePlan.id),
     offers,
   };
+}
+
+/**
+ * Zusammenfassung über alle Angebote. Ein Code kann für eine Zimmerart
+ * gelten und für eine andere nicht - der Gast sieht dann den Stand seiner
+ * Auswahl, und ohne Auswahl diese Zusammenfassung.
+ */
+function codeStatus(code: string | null, offers: StayOffer[]): CodeResult {
+  if (!code) return { code: null, status: "NONE", reason: null };
+
+  const angewendet = offers.find((offer) => offer.promotionCode.status === "APPLIED");
+
+  if (angewendet) return angewendet.promotionCode;
+
+  const uebertroffen = offers.find((offer) => offer.promotionCode.status === "OUTPERFORMED");
+
+  if (uebertroffen) return uebertroffen.promotionCode;
+
+  return (
+    offers[0]?.promotionCode ?? {
+      code,
+      status: "NOT_APPLICABLE",
+      reason: "Für diesen Zeitraum ist kein passendes Zimmer verfügbar.",
+    }
+  );
 }
 
 export type GuestInput = {
@@ -407,14 +654,7 @@ export function parseGuest(raw: Record<string, unknown>): GuestInput {
   };
 }
 
-function bookingNumber() {
-  const year = new Date().getFullYear();
-  const random = Math.floor(Math.random() * 1_000_000)
-    .toString()
-    .padStart(6, "0");
 
-  return `AT-${year}-${random}`;
-}
 
 export type CreateBookingInput = {
   stay: StayQuery;
@@ -432,6 +672,33 @@ export type CreateBookingInput = {
 };
 
 export async function createBooking(input: CreateBookingInput) {
+  // Die interne ID bleibt im Service; nach aussen ist die Buchungsnummer die
+  // Kennung, die der Gast nennt.
+  const { bookingId, ...buchung } = await speichereBuchung(input);
+
+  // Reihenfolge ist entscheidend: Die Buchung ist zu diesem Zeitpunkt
+  // festgeschrieben. Der Mailversand laeuft danach und kann sie nicht mehr
+  // gefaehrden - scheitert er, bleibt die Buchung bestaetigt und der Versuch
+  // ist protokolliert. Die Verwaltung kann die Bestaetigung erneut senden.
+  let bestaetigungsmail: string | null = null;
+
+  try {
+    const mail = await sendHotelBookingConfirmation(bookingId);
+
+    bestaetigungsmail = mail?.status ?? null;
+  } catch (error) {
+    console.error("Booking confirmation mail error:", error);
+  }
+
+  // Die Buchung ist gespeichert und bestaetigt. Ob ein Vertriebskanal davon
+  // erfaehrt, ist eine getrennte Frage: Sie wird als Auftrag festgehalten
+  // und kann hier nichts mehr gefaehrden.
+  await enqueueAvailabilityForBooking(bookingId);
+
+  return { ...buchung, confirmationMail: bestaetigungsmail };
+}
+
+async function speichereBuchung(input: CreateBookingInput) {
   if (!input.acceptedTerms || !input.acceptedPrivacy) {
     throw new HttpError(
       400,
@@ -532,7 +799,10 @@ export async function createBooking(input: CreateBookingInput) {
           hotelId: hotel.id,
           bookingNumber: bookingNumber(),
           guestId: guest.id,
-          status: "PENDING",
+          // Verfuegbarkeit, Bettart und Preis sind serverseitig geprueft, es
+          // bleibt kein Schritt fuer den Betrieb offen. Die Buchung ist
+          // damit verbindlich und wird sofort bestaetigt.
+          status: "CONFIRMED",
           source: "WEBSITE",
           checkIn,
           checkOut,
@@ -608,6 +878,7 @@ export async function createBooking(input: CreateBookingInput) {
     }
 
     return {
+      bookingId: booking.id,
       bookingNumber: booking.bookingNumber,
       status: booking.status,
       checkIn: input.stay.checkIn,

@@ -17,8 +17,23 @@ type Totals = {
   roomsTotal: string;
   discountPercent: number;
   discountTotal: string;
+  /** Name der wirksamen Aktion, oder null. */
+  discountName: string | null;
   breakfastTotal: string;
   total: string;
+};
+
+type PromotionInfo = {
+  code: string;
+  name: string;
+  percent: number;
+  source: "AUTOMATIC" | "CODE";
+};
+
+type CodeResult = {
+  code: string | null;
+  status: "NONE" | "APPLIED" | "UNKNOWN" | "NOT_APPLICABLE" | "OUTPERFORMED";
+  reason: string | null;
 };
 
 type Offer = {
@@ -37,6 +52,8 @@ type Offer = {
   roomsAvailable: number;
   bedTypes: BedOption[];
   totals: Totals;
+  promotion: PromotionInfo | null;
+  promotionCode: CodeResult;
 };
 
 // Das Angebot des Servers in die Darstellung der Zimmerkarte uebersetzen.
@@ -68,6 +85,7 @@ type SearchResult = {
   persons: number;
   breakfast: boolean;
   breakfastPricePerPersonNight: string | null;
+  promotionCode: CodeResult;
   cancellation: Cancellation | null;
   guarantee: { required: boolean; available: boolean };
   offers: Offer[];
@@ -120,6 +138,9 @@ export default function BookingPage() {
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [stay, setStay] = useState({ checkIn: "", checkOut: "", adults: "2", children: "0" });
   const [breakfast, setBreakfast] = useState(false);
+  // Aktionscode des Gastes. Geprüft wird ausschließlich serverseitig; dieses
+  // Feld hält nur die Eingabe.
+  const [promoCode, setPromoCode] = useState("");
   const [result, setResult] = useState<SearchResult | null>(null);
   const [roomTypeId, setRoomTypeId] = useState<number | null>(null);
   const [bedType, setBedType] = useState<string>("");
@@ -134,7 +155,7 @@ export default function BookingPage() {
 
   const selected = result?.offers.find((offer) => offer.roomTypeId === roomTypeId) ?? null;
 
-  async function search(withBreakfast = breakfast, keepSelection = false) {
+  async function search(withBreakfast = breakfast, keepSelection = false, code = promoCode) {
     setBusy(true);
     setError("");
 
@@ -147,6 +168,9 @@ export default function BookingPage() {
         adults: Number(stay.adults),
         children: Number(stay.children),
         breakfast: withBreakfast,
+        // Bei jeder Suche mitgeschickt: Ändern sich Reisedaten oder
+        // Verpflegung, wird die Rabattberechtigung neu geprüft.
+        promotionCode: code,
       }),
     });
 
@@ -212,6 +236,9 @@ export default function BookingPage() {
         acceptedTerms: terms,
         acceptedPrivacy: privacy,
         cardSetupRef,
+        // Der Code wird beim Anlegen erneut geprüft. Der Preis entsteht
+        // ausschließlich auf dem Server.
+        promotionCode: promoCode,
       }),
     });
 
@@ -461,9 +488,10 @@ export default function BookingPage() {
                         <span className="font-bold text-[#211f1b]">
                           {euro(offer.totals.total)} &euro;
                         </span>
-                        {offer.totals.discountPercent > 0 && (
+                        {Number(offer.totals.discountTotal) > 0 && (
                           <span className="ml-2 text-[#b08a4a]">
-                            inkl. {offer.totals.discountPercent} % Rabatt
+                            inkl. {euro(offer.totals.discountTotal)} &euro; Rabatt
+                            {offer.totals.discountName ? ` (${offer.totals.discountName})` : ""}
                           </span>
                         )}
                       </p>
@@ -599,15 +627,81 @@ export default function BookingPage() {
               ))}
             </dl>
 
+            {/* Aktionscode. Steht bewusst vor der Preisübersicht, damit der
+                Gast die Wirkung direkt darunter sieht. */}
+            <div className="mt-6 rounded-2xl border border-[#211f1b]/10 bg-white p-5">
+              <label className="block text-sm font-semibold" htmlFor="aktionscode">
+                Aktionscode / Rabattcode
+                <span className="ml-2 font-normal text-[#756f64]">optional</span>
+              </label>
+
+              <div className="mt-3 flex flex-wrap gap-3">
+                <input
+                  id="aktionscode"
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                  placeholder="z. B. HERBST2027"
+                  className="min-w-0 flex-1 rounded-xl border border-[#211f1b]/15 bg-[#f5f1e8] px-4 py-3 uppercase outline-none transition focus:border-[#b08a4a]"
+                />
+
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => search(breakfast, true)}
+                  className="rounded-full bg-[#211f1b] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#3a3630] disabled:opacity-50"
+                >
+                  {busy ? "Prüfen …" : "Anwenden"}
+                </button>
+
+                {promoCode && (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => {
+                      setPromoCode("");
+                      search(breakfast, true, "");
+                    }}
+                    className="rounded-full px-4 py-3 text-sm font-bold text-[#756f64] transition hover:text-[#211f1b] disabled:opacity-50"
+                  >
+                    Entfernen
+                  </button>
+                )}
+              </div>
+
+              {selected.promotionCode.status === "APPLIED" && (
+                <p className="mt-3 text-sm font-semibold text-[#315c45]">
+                  ✓ Code „{selected.promotionCode.code}“ angewendet:{" "}
+                  {selected.totals.discountName} – Sie sparen{" "}
+                  {euro(selected.totals.discountTotal)} &euro;.
+                </p>
+              )}
+
+              {selected.promotionCode.status === "OUTPERFORMED" && (
+                <p className="mt-3 text-sm text-[#8a682d]">{selected.promotionCode.reason}</p>
+              )}
+
+              {(selected.promotionCode.status === "UNKNOWN" ||
+                selected.promotionCode.status === "NOT_APPLICABLE") && (
+                <p className="mt-3 text-sm text-red-700">{selected.promotionCode.reason}</p>
+              )}
+            </div>
+
             <div className="mt-6 rounded-2xl border border-[#211f1b]/10 bg-white">
               <div className="flex justify-between px-5 py-3.5 text-sm">
                 <span className="text-[#756f64]">Zimmer</span>
                 <span className="font-semibold">{euro(selected.totals.roomsTotal)} €</span>
               </div>
 
-              {selected.totals.discountPercent > 0 && (
+              {Number(selected.totals.discountTotal) > 0 && (
                 <div className="flex justify-between px-5 py-3.5 text-sm text-[#b08a4a]">
-                  <span>Rabatt ({selected.totals.discountPercent} %)</span>
+                  <span>
+                    Rabatt
+                    {selected.totals.discountName ? ` – ${selected.totals.discountName}` : ""}
+                    {selected.totals.discountPercent > 0
+                      ? ` (${selected.totals.discountPercent} %)`
+                      : ""}
+                    {selected.promotion?.source === "CODE" ? " · Aktionscode" : ""}
+                  </span>
                   <span className="font-semibold">− {euro(selected.totals.discountTotal)} €</span>
                 </div>
               )}

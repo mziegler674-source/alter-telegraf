@@ -95,6 +95,8 @@ export default function ReservationsPage() {
 
     const [updatingId, setUpdatingId] = useState<number | null>(null);
     const [deletingId, setDeletingId] = useState<number | null>(null);
+    const [resendingId, setResendingId] = useState<number | null>(null);
+    const [notice, setNotice] = useState("");
 
     async function loadReservations() {
         try {
@@ -143,6 +145,7 @@ export default function ReservationsPage() {
         try {
             setUpdatingId(id);
             setError("");
+            setNotice("");
 
             const response = await fetch(
                 "/api/admin/reservations",
@@ -177,6 +180,27 @@ export default function ReservationsPage() {
                         : reservation
                 )
             );
+
+            /*
+             * Mit der Bestätigung geht die Zusage an den Gast hinaus. Der
+             * Status ist bereits gespeichert - ein Fehler beim Versand
+             * ändert daran nichts, der Betrieb soll ihn aber sehen.
+             */
+
+            if (data.mail?.status === "SENT") {
+                setNotice(
+                    "Die Reservierung ist bestätigt, der Gast hat die E-Mail erhalten."
+                );
+            } else if (data.mail?.status === "SKIPPED") {
+                setNotice(
+                    "Die Reservierung ist bestätigt. Es ist kein Mailversand eingerichtet, daher ging keine E-Mail hinaus."
+                );
+            } else if (data.mail) {
+                setError(
+                    `Die Reservierung ist bestätigt, aber die E-Mail konnte nicht verschickt werden${data.mail.error ? ` (${data.mail.error})` : ""
+                    }. Sie können den Versand hier wiederholen.`
+                );
+            }
         } catch (err) {
             console.error(err);
 
@@ -187,6 +211,66 @@ export default function ReservationsPage() {
             );
         } finally {
             setUpdatingId(null);
+        }
+    }
+
+    /**
+     * Schickt dem Gast die Mail zum aktuellen Stand der Reservierung erneut.
+     * Der Status bleibt unverändert.
+     */
+    async function resendConfirmation(id: number) {
+        try {
+            setResendingId(id);
+            setError("");
+            setNotice("");
+
+            const response = await fetch(
+                "/api/admin/reservations",
+                {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        id,
+                        resend: true,
+                    }),
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data.error ||
+                    "Die E-Mail konnte nicht verschickt werden."
+                );
+            }
+
+            if (data.mail?.status === "SENT") {
+                setNotice(
+                    "Die E-Mail wurde erneut verschickt."
+                );
+            } else if (data.mail?.status === "SKIPPED") {
+                setNotice(
+                    "Es ist kein Mailversand eingerichtet, daher ging keine E-Mail hinaus."
+                );
+            } else {
+                throw new Error(
+                    data.mail?.error ||
+                    "Die E-Mail konnte nicht verschickt werden."
+                );
+            }
+        } catch (err) {
+            console.error(err);
+
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : "Die E-Mail konnte nicht verschickt werden."
+            );
+        } finally {
+            setResendingId(null);
         }
     }
 
@@ -369,6 +453,12 @@ export default function ReservationsPage() {
                 {error && (
                     <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
                         {error}
+                    </div>
+                )}
+
+                {notice && (
+                    <div className="mb-6 rounded-2xl border border-[#315c45]/20 bg-[#315c45]/5 px-5 py-4 text-sm text-[#264936]">
+                        {notice}
                     </div>
                 )}
 
@@ -636,6 +726,29 @@ export default function ReservationsPage() {
                                                 </div>
 
                                                 <div className="h-px bg-[#211f1b]/10" />
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        resendConfirmation(
+                                                            reservation.id
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        resendingId ===
+                                                        reservation.id ||
+                                                        updatingId ===
+                                                        reservation.id ||
+                                                        deletingId ===
+                                                        reservation.id
+                                                    }
+                                                    className="rounded-xl border border-[#211f1b]/15 px-4 py-3 text-sm font-bold text-[#211f1b] transition hover:bg-[#f5f1e8] disabled:cursor-not-allowed disabled:opacity-50"
+                                                >
+                                                    {resendingId ===
+                                                        reservation.id
+                                                        ? "Wird gesendet..."
+                                                        : "Bestätigung erneut senden"}
+                                                </button>
 
                                                 <button
                                                     type="button"

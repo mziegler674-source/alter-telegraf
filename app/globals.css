@@ -34,10 +34,3 @@ button,
 a {
   transition: all 0.25s ease;
 } 
-
-iframe {
-  display: block;
-  width: 100%;
-  height: 600px;
-  border: 0;
-}

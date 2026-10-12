@@ -1,0 +1,44 @@
+[
+  {
+    "id": "column.hotel.promotion.requiresCode",
+    "label": "Add column \"requiresCode\" to \"promotion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "column",
+        "name": "requiresCode",
+        "table": "promotion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"requiresCode\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "promotion",
+          "requiresCode"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"requiresCode\"",
+        "sql": "ALTER TABLE \"hotel\".\"promotion\" ADD COLUMN \"requiresCode\" bool DEFAULT false NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"requiresCode\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "hotel",
+          "promotion",
+          "requiresCode"
+        ]
+      }
+    ]
+  }
+]

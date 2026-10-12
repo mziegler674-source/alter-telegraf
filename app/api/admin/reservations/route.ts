@@ -6,6 +6,7 @@ import { cookies } from "next/headers";
 
 import { db } from "@/prisma/db";
 import { verifySession } from "@/lib/auth";
+import { sendRestaurantReservationMail } from "@/lib/mail/notifications";
 
 
 
@@ -124,6 +125,9 @@ export async function PATCH(request: Request) {
                 ? body.status
                 : "";
 
+        // Reiner Mailversand ohne Statuswechsel: "Bestätigung erneut senden".
+        const resendOnly = body.resend === true;
+
         if (!Number.isInteger(id) || id <= 0) {
             return NextResponse.json(
                 {
@@ -136,6 +140,7 @@ export async function PATCH(request: Request) {
         }
 
         if (
+            !resendOnly &&
             !allowedStatuses.includes(
                 status as (typeof allowedStatuses)[number]
             )
@@ -168,6 +173,28 @@ export async function PATCH(request: Request) {
             );
         }
 
+        if (resendOnly) {
+            const resent =
+                await sendRestaurantReservationMail(
+                    reservation.id,
+                    reservation.status === "CONFIRMED"
+                        ? "CONFIRMED"
+                        : "RECEIVED"
+                );
+
+            return NextResponse.json({
+                success: true,
+                reservation,
+                mail: resent
+                    ? {
+                        status: resent.status,
+                        error: resent.error,
+                        attempt: resent.attempt,
+                    }
+                    : null,
+            });
+        }
+
         const updated =
             await db.orm.public.Reservation
                 .where({
@@ -178,9 +205,32 @@ export async function PATCH(request: Request) {
                     status,
                 });
 
+        /*
+         * Mit der Bestätigung des Betriebs wird die Reservierung für den
+         * Gast verbindlich - dann geht die Zusage per E-Mail hinaus. Der
+         * Statuswechsel steht bereits in der Datenbank; ein Fehler beim
+         * Versand kann ihn nicht mehr rückgängig machen.
+         */
+
+        const mail =
+            status === "CONFIRMED" &&
+            reservation.status !== "CONFIRMED"
+                ? await sendRestaurantReservationMail(
+                    reservation.id,
+                    "CONFIRMED"
+                )
+                : null;
+
         return NextResponse.json({
             success: true,
             reservation: updated,
+            mail: mail
+                ? {
+                    status: mail.status,
+                    error: mail.error,
+                    attempt: mail.attempt,
+                }
+                : null,
         });
     } catch (error) {
         console.error(

@@ -1,0 +1,605 @@
+[
+  {
+    "id": "table.channelMapping",
+    "label": "Create table \"channelMapping\"",
+    "summary": "Creates table \"channelMapping\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "table",
+        "name": "channelMapping"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"channelMapping\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"channelMapping\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"channelMapping\"",
+        "sql": "CREATE TABLE \"hotel\".\"channelMapping\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"externalPropertyId\" text NOT NULL,\n  \"externalRatePlanId\" text,\n  \"externalRoomTypeId\" text NOT NULL,\n  \"hotelId\" int4 NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"note\" text,\n  \"provider\" text NOT NULL,\n  \"ratePlanId\" int4,\n  \"roomTypeId\" int4 NOT NULL,\n  \"syncStatus\" text DEFAULT 'UNVERIFIED' NOT NULL,\n  \"updatedAt\" timestamptz,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"channelMapping\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"channelMapping\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.syncJob",
+    "label": "Create table \"syncJob\"",
+    "summary": "Creates table \"syncJob\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "table",
+        "name": "syncJob"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"syncJob\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"syncJob\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"syncJob\"",
+        "sql": "CREATE TABLE \"hotel\".\"syncJob\" (\n  \"attempts\" int4 DEFAULT 0 NOT NULL,\n  \"bookingId\" int4,\n  \"completedAt\" timestamptz,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"dateFrom\" date,\n  \"dateTo\" date,\n  \"direction\" text NOT NULL,\n  \"externalRef\" text,\n  \"id\" SERIAL NOT NULL,\n  \"lastError\" text,\n  \"maxAttempts\" int4 DEFAULT 5 NOT NULL,\n  \"messageId\" text,\n  \"nextAttemptAt\" timestamptz,\n  \"operation\" text NOT NULL,\n  \"payload\" json,\n  \"provider\" text NOT NULL,\n  \"roomTypeId\" int4,\n  \"status\" text DEFAULT 'PENDING' NOT NULL,\n  \"updatedAt\" timestamptz,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"syncJob_attempts_positive_0969939d\" CHECK (\"attempts\" >= 0)\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"syncJob\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"syncJob\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.channelMapping.channelMapping_provider_externalRoomTypeId_key",
+    "label": "Add unique constraint on \"channelMapping\" (provider, externalRoomTypeId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "unique",
+        "name": "channelMapping_provider_externalRoomTypeId_key",
+        "table": "channelMapping"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"channelMapping_provider_externalRoomTypeId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "channelMapping_provider_externalRoomTypeId_key",
+          "hotel",
+          "\"hotel\".\"channelMapping\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"channelMapping_provider_externalRoomTypeId_key\"",
+        "sql": "ALTER TABLE \"hotel\".\"channelMapping\" ADD CONSTRAINT \"channelMapping_provider_externalRoomTypeId_key\" UNIQUE (\"provider\", \"externalRoomTypeId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"channelMapping_provider_externalRoomTypeId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "channelMapping_provider_externalRoomTypeId_key",
+          "hotel",
+          "\"hotel\".\"channelMapping\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.syncJob.syncJob_provider_messageId_key",
+    "label": "Add unique constraint on \"syncJob\" (provider, messageId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "unique",
+        "name": "syncJob_provider_messageId_key",
+        "table": "syncJob"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"syncJob_provider_messageId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "syncJob_provider_messageId_key",
+          "hotel",
+          "\"hotel\".\"syncJob\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"syncJob_provider_messageId_key\"",
+        "sql": "ALTER TABLE \"hotel\".\"syncJob\" ADD CONSTRAINT \"syncJob_provider_messageId_key\" UNIQUE (\"provider\", \"messageId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"syncJob_provider_messageId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "syncJob_provider_messageId_key",
+          "hotel",
+          "\"hotel\".\"syncJob\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.channelMapping.channelMapping_hotelId_idx_462a16a4",
+    "label": "Create index \"channelMapping_hotelId_idx_462a16a4\" on \"channelMapping\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "channelMapping_hotelId_idx_462a16a4",
+        "table": "channelMapping"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"channelMapping_hotelId_idx_462a16a4\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"channelMapping_hotelId_idx_462a16a4\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"channelMapping_hotelId_idx_462a16a4\"",
+        "sql": "CREATE INDEX \"channelMapping_hotelId_idx_462a16a4\" ON \"hotel\".\"channelMapping\" (\"hotelId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"channelMapping_hotelId_idx_462a16a4\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"channelMapping_hotelId_idx_462a16a4\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.channelMapping.channelMapping_hotelId_provider_idx_e27ad65a",
+    "label": "Create index \"channelMapping_hotelId_provider_idx_e27ad65a\" on \"channelMapping\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "channelMapping_hotelId_provider_idx_e27ad65a",
+        "table": "channelMapping"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"channelMapping_hotelId_provider_idx_e27ad65a\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"channelMapping_hotelId_provider_idx_e27ad65a\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"channelMapping_hotelId_provider_idx_e27ad65a\"",
+        "sql": "CREATE INDEX \"channelMapping_hotelId_provider_idx_e27ad65a\" ON \"hotel\".\"channelMapping\" (\"hotelId\", \"provider\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"channelMapping_hotelId_provider_idx_e27ad65a\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"channelMapping_hotelId_provider_idx_e27ad65a\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.channelMapping.channelMapping_ratePlanId_idx_18cf7a69",
+    "label": "Create index \"channelMapping_ratePlanId_idx_18cf7a69\" on \"channelMapping\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "channelMapping_ratePlanId_idx_18cf7a69",
+        "table": "channelMapping"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"channelMapping_ratePlanId_idx_18cf7a69\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"channelMapping_ratePlanId_idx_18cf7a69\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"channelMapping_ratePlanId_idx_18cf7a69\"",
+        "sql": "CREATE INDEX \"channelMapping_ratePlanId_idx_18cf7a69\" ON \"hotel\".\"channelMapping\" (\"ratePlanId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"channelMapping_ratePlanId_idx_18cf7a69\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"channelMapping_ratePlanId_idx_18cf7a69\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.channelMapping.channelMapping_roomTypeId_idx_0c4e04bc",
+    "label": "Create index \"channelMapping_roomTypeId_idx_0c4e04bc\" on \"channelMapping\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "channelMapping_roomTypeId_idx_0c4e04bc",
+        "table": "channelMapping"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"channelMapping_roomTypeId_idx_0c4e04bc\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"channelMapping_roomTypeId_idx_0c4e04bc\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"channelMapping_roomTypeId_idx_0c4e04bc\"",
+        "sql": "CREATE INDEX \"channelMapping_roomTypeId_idx_0c4e04bc\" ON \"hotel\".\"channelMapping\" (\"roomTypeId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"channelMapping_roomTypeId_idx_0c4e04bc\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"channelMapping_roomTypeId_idx_0c4e04bc\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.syncJob.syncJob_bookingId_idx_17848f4a",
+    "label": "Create index \"syncJob_bookingId_idx_17848f4a\" on \"syncJob\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "syncJob_bookingId_idx_17848f4a",
+        "table": "syncJob"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"syncJob_bookingId_idx_17848f4a\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"syncJob_bookingId_idx_17848f4a\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"syncJob_bookingId_idx_17848f4a\"",
+        "sql": "CREATE INDEX \"syncJob_bookingId_idx_17848f4a\" ON \"hotel\".\"syncJob\" (\"bookingId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"syncJob_bookingId_idx_17848f4a\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"syncJob_bookingId_idx_17848f4a\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.syncJob.syncJob_provider_operation_status_idx_c7eecee3",
+    "label": "Create index \"syncJob_provider_operation_status_idx_c7eecee3\" on \"syncJob\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "syncJob_provider_operation_status_idx_c7eecee3",
+        "table": "syncJob"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"syncJob_provider_operation_status_idx_c7eecee3\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"syncJob_provider_operation_status_idx_c7eecee3\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"syncJob_provider_operation_status_idx_c7eecee3\"",
+        "sql": "CREATE INDEX \"syncJob_provider_operation_status_idx_c7eecee3\" ON \"hotel\".\"syncJob\" (\"provider\", \"operation\", \"status\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"syncJob_provider_operation_status_idx_c7eecee3\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"syncJob_provider_operation_status_idx_c7eecee3\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.syncJob.syncJob_status_nextAttemptAt_idx_8ba20615",
+    "label": "Create index \"syncJob_status_nextAttemptAt_idx_8ba20615\" on \"syncJob\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "index",
+        "name": "syncJob_status_nextAttemptAt_idx_8ba20615",
+        "table": "syncJob"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"syncJob_status_nextAttemptAt_idx_8ba20615\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"syncJob_status_nextAttemptAt_idx_8ba20615\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"syncJob_status_nextAttemptAt_idx_8ba20615\"",
+        "sql": "CREATE INDEX \"syncJob_status_nextAttemptAt_idx_8ba20615\" ON \"hotel\".\"syncJob\" (\"status\", \"nextAttemptAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"syncJob_status_nextAttemptAt_idx_8ba20615\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"hotel\".\"syncJob_status_nextAttemptAt_idx_8ba20615\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.channelMapping.channelMapping_hotelId_fkey",
+    "label": "Add foreign key \"channelMapping_hotelId_fkey\" on \"channelMapping\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "channelMapping_hotelId_fkey",
+        "table": "channelMapping"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"channelMapping_hotelId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "channelMapping_hotelId_fkey",
+          "hotel",
+          "\"hotel\".\"channelMapping\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"channelMapping_hotelId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"channelMapping\"\nADD CONSTRAINT \"channelMapping_hotelId_fkey\"\nFOREIGN KEY (\"hotelId\")\nREFERENCES \"hotel\".\"hotel\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"channelMapping_hotelId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "channelMapping_hotelId_fkey",
+          "hotel",
+          "\"hotel\".\"channelMapping\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.channelMapping.channelMapping_roomTypeId_fkey",
+    "label": "Add foreign key \"channelMapping_roomTypeId_fkey\" on \"channelMapping\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "channelMapping_roomTypeId_fkey",
+        "table": "channelMapping"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"channelMapping_roomTypeId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "channelMapping_roomTypeId_fkey",
+          "hotel",
+          "\"hotel\".\"channelMapping\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"channelMapping_roomTypeId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"channelMapping\"\nADD CONSTRAINT \"channelMapping_roomTypeId_fkey\"\nFOREIGN KEY (\"roomTypeId\")\nREFERENCES \"hotel\".\"roomType\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"channelMapping_roomTypeId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "channelMapping_roomTypeId_fkey",
+          "hotel",
+          "\"hotel\".\"channelMapping\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.channelMapping.channelMapping_ratePlanId_fkey",
+    "label": "Add foreign key \"channelMapping_ratePlanId_fkey\" on \"channelMapping\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "channelMapping_ratePlanId_fkey",
+        "table": "channelMapping"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"channelMapping_ratePlanId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "channelMapping_ratePlanId_fkey",
+          "hotel",
+          "\"hotel\".\"channelMapping\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"channelMapping_ratePlanId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"channelMapping\"\nADD CONSTRAINT \"channelMapping_ratePlanId_fkey\"\nFOREIGN KEY (\"ratePlanId\")\nREFERENCES \"hotel\".\"ratePlan\" (\"id\")\nON DELETE SET NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"channelMapping_ratePlanId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "channelMapping_ratePlanId_fkey",
+          "hotel",
+          "\"hotel\".\"channelMapping\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.syncJob.syncJob_bookingId_fkey",
+    "label": "Add foreign key \"syncJob_bookingId_fkey\" on \"syncJob\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "hotel",
+        "objectType": "foreignKey",
+        "name": "syncJob_bookingId_fkey",
+        "table": "syncJob"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"syncJob_bookingId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "syncJob_bookingId_fkey",
+          "hotel",
+          "\"hotel\".\"syncJob\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"syncJob_bookingId_fkey\"",
+        "sql": "ALTER TABLE \"hotel\".\"syncJob\"\nADD CONSTRAINT \"syncJob_bookingId_fkey\"\nFOREIGN KEY (\"bookingId\")\nREFERENCES \"hotel\".\"booking\" (\"id\")\nON DELETE SET NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"syncJob_bookingId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "syncJob_bookingId_fkey",
+          "hotel",
+          "\"hotel\".\"syncJob\""
+        ]
+      }
+    ]
+  }
+]

@@ -36,8 +36,16 @@
       "model": "CancellationRule",
       "namespace": "hotel"
     },
+    "channelMapping": {
+      "model": "ChannelMapping",
+      "namespace": "hotel"
+    },
     "dailyMenu": {
       "model": "DailyMenu",
+      "namespace": "public"
+    },
+    "emailLog": {
+      "model": "EmailLog",
       "namespace": "public"
     },
     "guest": {
@@ -104,6 +112,10 @@
       "model": "Room",
       "namespace": "hotel"
     },
+    "roomBlock": {
+      "model": "RoomBlock",
+      "namespace": "hotel"
+    },
     "roomType": {
       "model": "RoomType",
       "namespace": "hotel"
@@ -118,6 +130,10 @@
     },
     "serviceItem": {
       "model": "ServiceItem",
+      "namespace": "hotel"
+    },
+    "syncJob": {
+      "model": "SyncJob",
       "namespace": "hotel"
     },
     "user": {
@@ -586,6 +602,21 @@
                 },
                 "to": {
                   "model": "BookingRoom",
+                  "namespace": "hotel"
+                }
+              },
+              "syncJobs": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "bookingId"
+                  ]
+                },
+                "to": {
+                  "model": "SyncJob",
                   "namespace": "hotel"
                 }
               }
@@ -1551,6 +1582,183 @@
               "table": "cancellationRule"
             }
           },
+          "ChannelMapping": {
+            "fields": {
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "externalPropertyId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "externalRatePlanId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "externalRoomTypeId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "hotelId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "note": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "provider": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "ratePlanId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "roomTypeId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "syncStatus": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "hotel": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "hotelId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Hotel",
+                  "namespace": "hotel"
+                }
+              },
+              "ratePlan": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "ratePlanId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "RatePlan",
+                  "namespace": "hotel"
+                }
+              },
+              "roomType": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "roomTypeId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "RoomType",
+                  "namespace": "hotel"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "externalPropertyId": {
+                  "column": "externalPropertyId"
+                },
+                "externalRatePlanId": {
+                  "column": "externalRatePlanId"
+                },
+                "externalRoomTypeId": {
+                  "column": "externalRoomTypeId"
+                },
+                "hotelId": {
+                  "column": "hotelId"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "note": {
+                  "column": "note"
+                },
+                "provider": {
+                  "column": "provider"
+                },
+                "ratePlanId": {
+                  "column": "ratePlanId"
+                },
+                "roomTypeId": {
+                  "column": "roomTypeId"
+                },
+                "syncStatus": {
+                  "column": "syncStatus"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "hotel",
+              "table": "channelMapping"
+            }
+          },
           "Guest": {
             "fields": {
               "birthDate": {
@@ -1947,6 +2155,21 @@
                 },
                 "to": {
                   "model": "Booking",
+                  "namespace": "hotel"
+                }
+              },
+              "channelMappings": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "hotelId"
+                  ]
+                },
+                "to": {
+                  "model": "ChannelMapping",
                   "namespace": "hotel"
                 }
               },
@@ -2452,6 +2675,13 @@
                   "kind": "scalar"
                 }
               },
+              "arrivalTo": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/date-temporal@1",
+                  "kind": "scalar"
+                }
+              },
               "bookingFrom": {
                 "nullable": true,
                 "type": {
@@ -2493,11 +2723,29 @@
                   "kind": "scalar"
                 }
               },
+              "departureFrom": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/date-temporal@1",
+                  "kind": "scalar"
+                }
+              },
               "description": {
                 "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
+                }
+              },
+              "discountAmount": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/numeric@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 10,
+                    "scale": 2
+                  }
                 }
               },
               "discountPercent": {
@@ -2539,6 +2787,13 @@
                   "kind": "scalar"
                 }
               },
+              "maxStayNights": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
               "minStayNights": {
                 "nullable": true,
                 "type": {
@@ -2550,6 +2805,13 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "requiresCode": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
                   "kind": "scalar"
                 }
               },
@@ -2640,6 +2902,9 @@
                 "active": {
                   "column": "active"
                 },
+                "arrivalTo": {
+                  "column": "arrivalTo"
+                },
                 "bookingFrom": {
                   "column": "bookingFrom"
                 },
@@ -2655,8 +2920,14 @@
                 "createdAt": {
                   "column": "createdAt"
                 },
+                "departureFrom": {
+                  "column": "departureFrom"
+                },
                 "description": {
                   "column": "description"
+                },
+                "discountAmount": {
+                  "column": "discountAmount"
                 },
                 "discountPercent": {
                   "column": "discountPercent"
@@ -2673,11 +2944,17 @@
                 "lastMinuteDays": {
                   "column": "lastMinuteDays"
                 },
+                "maxStayNights": {
+                  "column": "maxStayNights"
+                },
                 "minStayNights": {
                   "column": "minStayNights"
                 },
                 "name": {
                   "column": "name"
+                },
+                "requiresCode": {
+                  "column": "requiresCode"
                 },
                 "stayFrom": {
                   "column": "stayFrom"
@@ -2989,6 +3266,21 @@
                   "namespace": "hotel"
                 }
               },
+              "channelMappings": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "ratePlanId"
+                  ]
+                },
+                "to": {
+                  "model": "ChannelMapping",
+                  "namespace": "hotel"
+                }
+              },
               "hotel": {
                 "cardinality": "N:1",
                 "on": {
@@ -3293,6 +3585,21 @@
               }
             },
             "relations": {
+              "blocks": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "roomId"
+                  ]
+                },
+                "to": {
+                  "model": "RoomBlock",
+                  "namespace": "hotel"
+                }
+              },
               "bookingRooms": {
                 "cardinality": "1:N",
                 "on": {
@@ -3380,6 +3687,113 @@
               },
               "namespaceId": "hotel",
               "table": "room"
+            }
+          },
+          "RoomBlock": {
+            "fields": {
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "endDate": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/date-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "note": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "reason": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "roomId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "startDate": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/date-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "room": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "roomId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Room",
+                  "namespace": "hotel"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "endDate": {
+                  "column": "endDate"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "note": {
+                  "column": "note"
+                },
+                "reason": {
+                  "column": "reason"
+                },
+                "roomId": {
+                  "column": "roomId"
+                },
+                "startDate": {
+                  "column": "startDate"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "hotel",
+              "table": "roomBlock"
             }
           },
           "RoomType": {
@@ -3552,6 +3966,21 @@
                 },
                 "to": {
                   "model": "BookingRoom",
+                  "namespace": "hotel"
+                }
+              },
+              "channelMappings": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "roomTypeId"
+                  ]
+                },
+                "to": {
+                  "model": "ChannelMapping",
                   "namespace": "hotel"
                 }
               },
@@ -4084,6 +4513,223 @@
               "namespaceId": "hotel",
               "table": "serviceItem"
             }
+          },
+          "SyncJob": {
+            "fields": {
+              "attempts": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "bookingId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "completedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "dateFrom": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/date-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "dateTo": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/date-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "direction": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "externalRef": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "lastError": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "maxAttempts": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "messageId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "nextAttemptAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "operation": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "payload": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/json@1",
+                  "kind": "scalar"
+                }
+              },
+              "provider": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "roomTypeId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "status": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "booking": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "bookingId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Booking",
+                  "namespace": "hotel"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "attempts": {
+                  "column": "attempts"
+                },
+                "bookingId": {
+                  "column": "bookingId"
+                },
+                "completedAt": {
+                  "column": "completedAt"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "dateFrom": {
+                  "column": "dateFrom"
+                },
+                "dateTo": {
+                  "column": "dateTo"
+                },
+                "direction": {
+                  "column": "direction"
+                },
+                "externalRef": {
+                  "column": "externalRef"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "lastError": {
+                  "column": "lastError"
+                },
+                "maxAttempts": {
+                  "column": "maxAttempts"
+                },
+                "messageId": {
+                  "column": "messageId"
+                },
+                "nextAttemptAt": {
+                  "column": "nextAttemptAt"
+                },
+                "operation": {
+                  "column": "operation"
+                },
+                "payload": {
+                  "column": "payload"
+                },
+                "provider": {
+                  "column": "provider"
+                },
+                "roomTypeId": {
+                  "column": "roomTypeId"
+                },
+                "status": {
+                  "column": "status"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "hotel",
+              "table": "syncJob"
+            }
           }
         }
       },
@@ -4481,6 +5127,137 @@
               },
               "namespaceId": "public",
               "table": "dailyMenu"
+            }
+          },
+          "EmailLog": {
+            "fields": {
+              "attempt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "error": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "messageId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "recipient": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "status": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "subject": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "subjectId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "subjectType": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "transport": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "type": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {},
+            "storage": {
+              "fields": {
+                "attempt": {
+                  "column": "attempt"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "error": {
+                  "column": "error"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "messageId": {
+                  "column": "messageId"
+                },
+                "recipient": {
+                  "column": "recipient"
+                },
+                "status": {
+                  "column": "status"
+                },
+                "subject": {
+                  "column": "subject"
+                },
+                "subjectId": {
+                  "column": "subjectId"
+                },
+                "subjectType": {
+                  "column": "subjectType"
+                },
+                "transport": {
+                  "column": "transport"
+                },
+                "type": {
+                  "column": "type"
+                }
+              },
+              "namespaceId": "public",
+              "table": "emailLog"
             }
           },
           "MenuCard": {
@@ -6492,6 +7269,183 @@
                 }
               ]
             },
+            "channelMapping": {
+              "columns": {
+                "createdAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "externalPropertyId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "externalRatePlanId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "externalRoomTypeId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "hotelId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "note": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "provider": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "ratePlanId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
+                "roomTypeId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "syncStatus": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "UNVERIFIED"
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "hotelId"
+                    ],
+                    "namespaceId": "hotel",
+                    "tableName": "channelMapping"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "hotel",
+                    "tableName": "hotel"
+                  }
+                },
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "roomTypeId"
+                    ],
+                    "namespaceId": "hotel",
+                    "tableName": "channelMapping"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "hotel",
+                    "tableName": "roomType"
+                  }
+                },
+                {
+                  "onDelete": "setNull",
+                  "source": {
+                    "columns": [
+                      "ratePlanId"
+                    ],
+                    "namespaceId": "hotel",
+                    "tableName": "channelMapping"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "hotel",
+                    "tableName": "ratePlan"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "hotelId"
+                  ],
+                  "name": "channelMapping_hotelId_idx_462a16a4",
+                  "prefix": "channelMapping_hotelId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "hotelId",
+                    "provider"
+                  ],
+                  "name": "channelMapping_hotelId_provider_idx_e27ad65a",
+                  "prefix": "channelMapping_hotelId_provider_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "ratePlanId"
+                  ],
+                  "name": "channelMapping_ratePlanId_idx_18cf7a69",
+                  "prefix": "channelMapping_ratePlanId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "roomTypeId"
+                  ],
+                  "name": "channelMapping_roomTypeId_idx_0c4e04bc",
+                  "prefix": "channelMapping_roomTypeId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "provider",
+                    "externalRoomTypeId"
+                  ]
+                }
+              ]
+            },
             "guest": {
               "columns": {
                 "birthDate": {
@@ -7084,9 +8038,24 @@
             "promotion": {
               "checks": [
                 {
+                  "expression": "\"discountAmount\" IS NULL OR \"discountAmount\" >= 0",
+                  "name": "promotion_amount_positive_913e8f61",
+                  "prefix": "promotion_amount_positive"
+                },
+                {
                   "expression": "\"channel\" IN ('PUBLIC', 'MOBILE')",
                   "name": "promotion_channel_check_d475113f",
                   "prefix": "promotion_channel_check"
+                },
+                {
+                  "expression": "(\"discountPercent\" > 0) <> (\"discountAmount\" IS NOT NULL AND \"discountAmount\" > 0)",
+                  "name": "promotion_exactly_one_discount_2f378b04",
+                  "prefix": "promotion_exactly_one_discount"
+                },
+                {
+                  "expression": "\"discountPercent\" >= 0 AND \"discountPercent\" <= 100",
+                  "name": "promotion_percent_range_9843ff63",
+                  "prefix": "promotion_percent_range"
                 },
                 {
                   "expression": "\"type\" IN ('BASIC', 'EARLY_BOOKER', 'LAST_MINUTE')",
@@ -7103,6 +8072,11 @@
                   },
                   "nativeType": "bool",
                   "nullable": false
+                },
+                "arrivalTo": {
+                  "codecId": "pg/date-temporal@1",
+                  "nativeType": "date",
+                  "nullable": true
                 },
                 "bookingFrom": {
                   "codecId": "pg/date-temporal@1",
@@ -7143,10 +8117,24 @@
                   "nativeType": "timestamptz",
                   "nullable": false
                 },
+                "departureFrom": {
+                  "codecId": "pg/date-temporal@1",
+                  "nativeType": "date",
+                  "nullable": true
+                },
                 "description": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": true
+                },
+                "discountAmount": {
+                  "codecId": "pg/numeric@1",
+                  "nativeType": "numeric",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 10,
+                    "scale": 2
+                  }
                 },
                 "discountPercent": {
                   "codecId": "pg/numeric@1",
@@ -7181,6 +8169,11 @@
                   "nativeType": "int4",
                   "nullable": true
                 },
+                "maxStayNights": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
                 "minStayNights": {
                   "codecId": "pg/int4@1",
                   "nativeType": "int4",
@@ -7189,6 +8182,15 @@
                 "name": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
+                  "nullable": false
+                },
+                "requiresCode": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nativeType": "bool",
                   "nullable": false
                 },
                 "stayFrom": {
@@ -7979,6 +8981,119 @@
                 }
               ]
             },
+            "roomBlock": {
+              "checks": [
+                {
+                  "expression": "\"endDate\" > \"startDate\"",
+                  "name": "roomBlock_dates_ordered_e041dc87",
+                  "prefix": "roomBlock_dates_ordered"
+                }
+              ],
+              "columns": {
+                "createdAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "endDate": {
+                  "codecId": "pg/date-temporal@1",
+                  "nativeType": "date",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "note": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "reason": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "roomId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "startDate": {
+                  "codecId": "pg/date-temporal@1",
+                  "nativeType": "date",
+                  "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "roomId"
+                    ],
+                    "namespaceId": "hotel",
+                    "tableName": "roomBlock"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "hotel",
+                    "tableName": "room"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "roomId"
+                  ],
+                  "name": "roomBlock_roomId_idx_fe51d647",
+                  "prefix": "roomBlock_roomId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "roomId",
+                    "startDate",
+                    "endDate"
+                  ],
+                  "name": "roomBlock_roomId_startDate_endDate_idx_d3b26066",
+                  "prefix": "roomBlock_roomId_startDate_endDate_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "startDate",
+                    "endDate"
+                  ],
+                  "name": "roomBlock_startDate_endDate_idx_c734dcfc",
+                  "prefix": "roomBlock_startDate_endDate_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
+            },
             "roomType": {
               "checks": [
                 {
@@ -8538,6 +9653,193 @@
                   ]
                 }
               ]
+            },
+            "syncJob": {
+              "checks": [
+                {
+                  "expression": "\"attempts\" >= 0",
+                  "name": "syncJob_attempts_positive_0969939d",
+                  "prefix": "syncJob_attempts_positive"
+                }
+              ],
+              "columns": {
+                "attempts": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 0
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "bookingId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
+                "completedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "dateFrom": {
+                  "codecId": "pg/date-temporal@1",
+                  "nativeType": "date",
+                  "nullable": true
+                },
+                "dateTo": {
+                  "codecId": "pg/date-temporal@1",
+                  "nativeType": "date",
+                  "nullable": true
+                },
+                "direction": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "externalRef": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "lastError": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "maxAttempts": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 5
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "messageId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "nextAttemptAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "operation": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "payload": {
+                  "codecId": "pg/json@1",
+                  "nativeType": "json",
+                  "nullable": true
+                },
+                "provider": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "roomTypeId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
+                "status": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "PENDING"
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "setNull",
+                  "source": {
+                    "columns": [
+                      "bookingId"
+                    ],
+                    "namespaceId": "hotel",
+                    "tableName": "syncJob"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "hotel",
+                    "tableName": "booking"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "bookingId"
+                  ],
+                  "name": "syncJob_bookingId_idx_17848f4a",
+                  "prefix": "syncJob_bookingId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "provider",
+                    "operation",
+                    "status"
+                  ],
+                  "name": "syncJob_provider_operation_status_idx_c7eecee3",
+                  "prefix": "syncJob_provider_operation_status_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "status",
+                    "nextAttemptAt"
+                  ],
+                  "name": "syncJob_status_nextAttemptAt_idx_8ba20615",
+                  "prefix": "syncJob_status_nextAttemptAt_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "provider",
+                    "messageId"
+                  ]
+                }
+              ]
             }
           }
         },
@@ -8644,6 +9946,118 @@
                   ]
                 }
               ]
+            },
+            "emailLog": {
+              "columns": {
+                "attempt": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 1
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "error": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "messageId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "recipient": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "status": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "subject": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "subjectId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
+                "subjectType": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "transport": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "type": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [
+                {
+                  "columns": [
+                    "status",
+                    "createdAt"
+                  ],
+                  "name": "emailLog_status_createdAt_idx_58610442",
+                  "prefix": "emailLog_status_createdAt_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "subjectType",
+                    "subjectId"
+                  ],
+                  "name": "emailLog_subjectType_subjectId_idx_34976a96",
+                  "prefix": "emailLog_subjectType_subjectId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "type",
+                    "createdAt"
+                  ],
+                  "name": "emailLog_type_createdAt_idx_00d94001",
+                  "prefix": "emailLog_type_createdAt_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
             },
             "menuCard": {
               "columns": {
@@ -9367,7 +10781,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "502c11bb190331d01c50670a1ae835808ac8389177aa52d75ae02137f6c52779"
+    "storageHash": "9d59143b657cf231e47c170e01773395c275c97c0ef148e54d735515afbb0bc0"
   },
   "capabilities": {
     "postgres": {

@@ -145,6 +145,48 @@ model Reservation {
   @@index([restaurantId, status])
 }
 
+// Versandprotokoll aller automatisch verschickten E-Mails. Es dient dem
+// Betrieb als Nachweis und der Fehlersuche. Der Mailtext selbst wird NICHT
+// gespeichert, Zugangsdaten des Mailservers ebenfalls nicht.
+model EmailLog {
+  id Int @id @default(autoincrement())
+
+  // Anlass, z. B. HOTEL_BOOKING_CONFIRMATION. Bewusst Text und kein Enum:
+  // ein zusaetzlicher Mailtyp soll keine Migration verlangen.
+  type String
+
+  recipient String
+  subject   String
+
+  // SENT, FAILED oder SKIPPED (kein Mailversand eingerichtet).
+  status String
+
+  // Transportweg, z. B. smtp. Nur zur Fehlersuche.
+  transport String?
+
+  // Gekuerzte Meldung des Mailservers, falls der Versand scheitert.
+  error String?
+
+  // Kennung des Mailservers, falls er eine liefert.
+  messageId String?
+
+  // Lose Referenz auf den Anlass, z. B. HOTEL_BOOKING und die Buchungs-ID.
+  // Bewusst ohne Fremdschluessel: Hotel und Restaurant liegen in getrennten
+  // Schemas, und ein Protokolleintrag soll das Loeschen eines Datensatzes
+  // nicht verhindern.
+  subjectType String?
+  subjectId   Int?
+
+  // Zaehlt die Versuche je Anlass und Mailtyp, beginnend bei 1.
+  attempt Int @default(1)
+
+  createdAt DateTime @default(now())
+
+  @@index([subjectType, subjectId])
+  @@index([type, createdAt])
+  @@index([status, createdAt])
+}
+
 // =====================================================================
 // HOTEL-DOMÄNE
 // =====================================================================
@@ -290,6 +332,7 @@ namespace hotel {
     amenities Amenity[]
     ratePlans RatePlan[]
     bookings  Booking[]
+    channelMappings ChannelMapping[]
     services  ServiceItem[]
     policies  CancellationPolicy[]
     promotions Promotion[]
@@ -348,6 +391,7 @@ namespace hotel {
     inventory Inventory[]
     bookedAs  BookingRoom[]
     promotions PromotionRoomType[]
+    channelMappings ChannelMapping[]
 
     @@unique([hotelId, code])
     @@unique([hotelId, slug])
@@ -388,6 +432,7 @@ namespace hotel {
     createdAt DateTime    @default(now())
 
     bookingRooms BookingRoom[]
+    blocks       RoomBlock[]
 
     @@unique([hotelId, number])
     @@index([roomTypeId, active])
@@ -531,6 +576,7 @@ namespace hotel {
     prices       RatePrice[]
     bookingRooms BookingRoom[]
     promotions   PromotionRatePlan[]
+    channelMappings ChannelMapping[]
 
     @@unique([hotelId, code])
     @@index([hotelId, active])
@@ -597,16 +643,34 @@ namespace hotel {
 
     type          promotion_type
     channel       promotion_channel @default(PUBLIC)
-    discountPercent Numeric(5, 2)
 
+    // Genau eine der beiden Groessen wirkt: Prozentsatz ODER fester Betrag.
+    // Der feste Betrag gilt einmal je Aufenthalt, nicht je Nacht, und immer
+    // nur auf den Zimmerpreis. Siehe @@check weiter unten.
+    discountPercent Numeric(5, 2)
+    discountAmount  Numeric(10, 2)?
+
+    // Buchungsfenster: Wann darf gebucht werden?
     bookingFrom Date?
     bookingTo   Date?
-    stayFrom    Date?
-    stayTo      Date?
+
+    // Aufenthaltsfenster. stayFrom/arrivalTo begrenzen die Anreise,
+    // departureFrom/stayTo die Abreise.
+    stayFrom      Date?
+    stayTo        Date?
+    arrivalTo     Date?
+    departureFrom Date?
 
     minStayNights     Int?
+    maxStayNights     Int?
     earlyBookerDays   Int?
     lastMinuteDays    Int?
+
+    // Nur mit Aktionscode: Die Aktion greift ausschliesslich, wenn der Gast
+    // ihren Code eingibt. Ohne dieses Kennzeichen wirkt eine Aktion
+    // automatisch fuer jeden passenden Aufenthalt - so verhalten sich etwa
+    // die Langzeitrabatte.
+    requiresCode Boolean @default(false)
 
     active    Boolean  @default(true)
     createdAt DateTime @default(now())
@@ -617,6 +681,142 @@ namespace hotel {
 
     @@unique([hotelId, code])
     @@index([hotelId, active])
+    @@check(
+      expression: "\"discountPercent\" >= 0 AND \"discountPercent\" <= 100",
+      name: "promotion_percent_range"
+    )
+    @@check(
+      expression: "\"discountAmount\" IS NULL OR \"discountAmount\" >= 0",
+      name: "promotion_amount_positive"
+    )
+    // Eine Aktion ohne Rabatt waere wirkungslos, beides zugleich waere
+    // zweideutig. Genau eine der beiden Groessen muss greifen.
+    @@check(
+      expression: "(\"discountPercent\" > 0) <> (\"discountAmount\" IS NOT NULL AND \"discountAmount\" > 0)",
+      name: "promotion_exactly_one_discount"
+    )
+  }
+
+  // Zuordnung einer internen Zimmerart zu einer externen Zimmerart eines
+  // Vertriebskanals.
+  //
+  // Bewusst KEINE Zuordnung nach Namensaehnlichkeit: Die externen Kennungen
+  // werden eingetragen und muessen vom Betrieb bestaetigt werden
+  // (syncStatus CONFIRMED). Solange das nicht geschehen ist, wird nichts
+  // uebertragen.
+  //
+  // Zugangsdaten des Anbieters stehen NICHT hier, sondern ausschliesslich in
+  // Umgebungsvariablen.
+  model ChannelMapping {
+    id      Int   @id @default(autoincrement())
+    hotelId Int
+    hotel   Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+    // Kennung des Anbieters, z. B. "mock" oder der Name des Channel Managers.
+    provider String
+
+    roomTypeId Int
+    roomType   RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+
+    ratePlanId Int?
+    ratePlan   RatePlan? @relation(fields: [ratePlanId], references: [id], onDelete: SetNull)
+
+    externalPropertyId String
+    externalRoomTypeId String
+    externalRatePlanId String?
+
+    // UNVERIFIED (eingetragen, nicht bestaetigt), CONFIRMED, DISABLED.
+    syncStatus String @default("UNVERIFIED")
+
+    note      String?
+    createdAt DateTime  @default(now())
+    updatedAt DateTime?
+
+    // Eine externe Zimmerart gehoert je Anbieter zu genau einer internen.
+    @@unique([provider, externalRoomTypeId])
+    @@index([hotelId, provider])
+    @@index([roomTypeId])
+  }
+
+  // Auftrag und Protokoll der Kanalsynchronisierung in einem.
+  //
+  // Jede Uebertragung nach aussen und jede eingehende Nachricht entsteht als
+  // Zeile. Erst eine abgeschlossene Zeile (status DONE) belegt, dass der
+  // Kanal die Aenderung bestaetigt hat. Eine lokal gespeicherte Buchung und
+  // eine ausstehende Uebertragung sind damit getrennt sichtbar.
+  //
+  // payload enthaelt nur die fachlich noetigen Felder - niemals Zugangsdaten
+  // und keine vollstaendigen Gastdatensaetze.
+  model SyncJob {
+    id Int @id @default(autoincrement())
+
+    provider String
+
+    // INBOUND (von aussen) oder OUTBOUND (nach aussen).
+    direction String
+
+    // AVAILABILITY_PUSH, BOOKING_IMPORT, BOOKING_CHANGE, BOOKING_CANCEL.
+    operation String
+
+    // PENDING, DONE, FAILED, NEEDS_MAPPING, SKIPPED.
+    status String @default("PENDING")
+
+    bookingId Int?
+    booking   Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+    roomTypeId Int?
+
+    // Betroffener Zeitraum einer Verfuegbarkeitsmeldung.
+    dateFrom Date?
+    dateTo   Date?
+
+    // Reservierungsnummer des Kanals.
+    externalRef String?
+
+    // Kennung der eingehenden Nachricht. Macht einen erneuten Eingang
+    // derselben Nachricht erkennbar.
+    messageId String?
+
+    payload Json?
+
+    attempts      Int       @default(0)
+    maxAttempts   Int       @default(5)
+    nextAttemptAt DateTime?
+    lastError     String?
+
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime?
+    completedAt DateTime?
+
+    @@unique([provider, messageId])
+    @@index([status, nextAttemptAt])
+    @@index([bookingId])
+    @@index([provider, operation, status])
+    @@check(expression: "\"attempts\" >= 0", name: "syncJob_attempts_positive")
+  }
+
+  // Zeitraumbezogene Sperre eines physischen Zimmers, etwa fuer Wartung.
+  // Wirkt wie eine Belegung: Ein gesperrtes Zimmer steht der Verfuegbarkeit
+  // nicht zur Verfuegung. endDate ist wie checkOut einer Buchung exklusiv -
+  // die Sperre endet am Morgen dieses Tages.
+  model RoomBlock {
+    id     Int  @id @default(autoincrement())
+    roomId Int
+    room   Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+    startDate Date
+    endDate   Date
+
+    // Grund als Code, gepflegt in lib/hotel/constants.ts.
+    reason String
+    note   String?
+
+    createdAt DateTime  @default(now())
+    updatedAt DateTime?
+
+    @@index([roomId, startDate, endDate])
+    @@index([startDate, endDate])
+    @@check(expression: "\"endDate\" > \"startDate\"", name: "roomBlock_dates_ordered")
   }
 
   model PromotionRoomType {
@@ -765,6 +965,7 @@ namespace hotel {
     rooms         BookingRoom[]
     extras        BookingExtra[]
     paymentEvents PaymentEvent[]
+    syncJobs      SyncJob[]
 
     @@unique([externalChannel, externalBookingId])
     @@index([hotelId, checkIn])
