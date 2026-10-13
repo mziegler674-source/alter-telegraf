@@ -14,7 +14,7 @@ import {
   inputClass,
 } from "@/components/hotel-admin/ui";
 import { type ApiResult, apiRequest, toFormValue } from "@/lib/hotel/client";
-import { formatEuro } from "@/lib/hotel/pricing";
+import { formatMoney } from "@/lib/money";
 
 // Gästestammdaten.
 //
@@ -557,7 +557,7 @@ export default function GaestePage() {
                         )}
                       </td>
                       <td className="px-4 py-4 text-right font-semibold">
-                        {formatEuro(gast.revenue)} €
+                        {formatMoney(gast.revenue)}
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex flex-wrap gap-1">
@@ -691,7 +691,7 @@ export default function GaestePage() {
                   ["Gezählte Aufenthalte", String(detail.stays)],
                   ["Storniert", String(detail.cancelled)],
                   ["Nicht erschienen", String(detail.noShows)],
-                  ["Umsatz", `${formatEuro(detail.revenue)} €`],
+                  ["Umsatz", `${formatMoney(detail.revenue)}`],
                   ["Letzter Aufenthalt", detail.lastStay ? formatDate(detail.lastStay) : "–"],
                 ].map(([label, value]) => (
                   <div
@@ -765,7 +765,7 @@ export default function GaestePage() {
                           </Badge>
                         </td>
                         <td className="px-3 py-3 text-right font-semibold">
-                          {formatEuro(aufenthalt.totalAmount)} €
+                          {formatMoney(aufenthalt.totalAmount)}
                         </td>
                       </tr>
                     ))}

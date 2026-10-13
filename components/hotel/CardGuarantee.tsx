@@ -16,7 +16,12 @@ declare global {
 }
 
 type StripeLike = {
-  elements: (options: { clientSecret: string; appearance?: unknown }) => {
+  elements: (options: {
+    clientSecret: string;
+    appearance?: unknown;
+    /** Karte zuerst anzeigen. Welche Arten moeglich sind, steuert das Konto. */
+    paymentMethodOrder?: string[];
+  }) => {
     create: (typ: string, options?: unknown) => { mount: (ziel: HTMLElement) => void };
     submit: () => Promise<{ error?: { message?: string } }>;
   };
@@ -69,7 +74,14 @@ async function vorbereiten(email: string, name: string) {
   if (!window.Stripe) throw new Error("Stripe konnte nicht geladen werden.");
 
   const stripe = window.Stripe(data.publishableKey);
-  const elements = stripe.elements({ clientSecret: data.clientSecret });
+
+  // Karte steht vorn. Welche Zahlungsarten ueberhaupt angeboten werden,
+  // entscheidet die Einstellung des Stripe-Kontos; der Server nimmt am Ende
+  // ohnehin nur eine Karte an (confirmCardSetup prueft die Art).
+  const elements = stripe.elements({
+    clientSecret: data.clientSecret,
+    paymentMethodOrder: ["card"],
+  });
 
   return { stripe, elements, feld: elements.create("payment") };
 }

@@ -23,7 +23,7 @@ import {
 } from "@/lib/hotel/allocation";
 import { type ApiResult, apiRequest } from "@/lib/hotel/client";
 import { ROOM_STATUS_LABELS, type RoomStatus } from "@/lib/hotel/constants";
-import { formatEuro } from "@/lib/hotel/pricing";
+import { formatMoney } from "@/lib/money";
 
 // Belegungskalender.
 //
@@ -870,7 +870,7 @@ export default function KalenderPage() {
               [
                 "Gesamtpreis",
                 auswahl.totalAmount
-                  ? `${formatEuro(auswahl.totalAmount)} ${auswahl.currency}`
+                  ? formatMoney(auswahl.totalAmount)
                   : "–",
               ],
               [

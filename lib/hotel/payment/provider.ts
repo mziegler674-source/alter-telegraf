@@ -13,6 +13,17 @@ export type StoredCard = {
   customerRef: string;
   /** Kennung der hinterlegten Zahlungsmethode beim Anbieter. */
   methodRef: string;
+  /**
+   * E-Mail-Adresse, die beim Anbieter am Kunden haengt. Sie dient allein
+   * dazu, die Hinterlegung dem richtigen Gast zuzuordnen - sie kommt vom
+   * Anbieter, nie aus dem Browser. Null, wenn der Anbieter keine liefert.
+   */
+  customerEmail?: string | null;
+  /**
+   * Eigene Referenz, die beim Start der Erfassung mitgegeben wurde.
+   * Dient der Nachvollziehbarkeit, nicht der Berechtigung.
+   */
+  reference?: string | null;
 };
 
 export type SetupSession = {

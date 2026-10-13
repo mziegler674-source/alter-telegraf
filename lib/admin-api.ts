@@ -9,12 +9,20 @@ import { SLUG_PATTERN } from "@/lib/hotel/constants";
 import { db } from "@/prisma/db";
 
 export class HttpError extends Error {
-  constructor(
-    public readonly status: number,
-    message: string
-  ) {
+  /**
+   * Zusatzangaben fuer den Aufrufer, etwa Fehler je Formularfeld. Sie
+   * gehen unveraendert in die Antwort und duerfen deshalb keine internen
+   * Details enthalten.
+   */
+  readonly details?: unknown;
+
+  constructor(status: number, message: string, details?: unknown) {
     super(message);
+    this.status = status;
+    this.details = details;
   }
+
+  readonly status: number;
 }
 
 export type Body = Record<string, unknown>;
@@ -106,7 +114,28 @@ export async function handle(
     return await fn();
   } catch (error) {
     if (error instanceof HttpError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      // Bei 429 gehoert die Wartezeit auch in die Kopfzeile: Browser und
+      // Zwischenschichten lesen sie dort, nicht im Antworttext.
+      const wartezeit =
+        error.status === 429 &&
+        error.details !== null &&
+        typeof error.details === "object" &&
+        typeof (error.details as { retryAfterSeconds?: unknown }).retryAfterSeconds ===
+          "number"
+          ? (error.details as { retryAfterSeconds: number }).retryAfterSeconds
+          : null;
+
+      return NextResponse.json(
+        error.details === undefined
+          ? { error: error.message }
+          : { error: error.message, details: error.details },
+        {
+          status: error.status,
+          ...(wartezeit !== null
+            ? { headers: { "Retry-After": String(wartezeit) } }
+            : {}),
+        }
+      );
     }
 
     if (isUniqueViolation(error)) {

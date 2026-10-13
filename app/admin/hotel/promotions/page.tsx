@@ -14,7 +14,7 @@ import {
   inputClass,
 } from "@/components/hotel-admin/ui";
 import { type ApiResult, apiRequest, toFormValue } from "@/lib/hotel/client";
-import { formatEuro } from "@/lib/hotel/pricing";
+import { formatMoney, formatMoneyCents } from "@/lib/money";
 import {
   PROMOTION_CHANNELS,
   PROMOTION_CHANNEL_LABELS,
@@ -174,8 +174,7 @@ const formatDate = (value: string) =>
     new Date(`${value}T12:00:00`)
   );
 
-const euroAusCent = (cents: number) =>
-  (cents / 100).toLocaleString("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 
 function plusTage(iso: string, tage: number) {
   const datum = new Date(`${iso}T12:00:00Z`);
@@ -860,14 +859,14 @@ export default function PromotionsPage() {
                 <div className="flex flex-wrap items-baseline justify-between gap-3">
                   <p className="font-semibold">{zeile.roomTypeName}</p>
                   <p className="text-sm text-[#756f64]">
-                    {formatEuro(zeile.pricePerNight)} € pro Nacht
+                    {formatMoney(zeile.pricePerNight)} pro Nacht
                   </p>
                 </div>
 
                 <dl className="mt-3 space-y-1 text-sm">
                   <div className="flex justify-between gap-6">
                     <dt className="text-[#756f64]">Zimmerpreis</dt>
-                    <dd className="font-semibold">{formatEuro(zeile.totals.roomsTotal)} €</dd>
+                    <dd className="font-semibold">{formatMoney(zeile.totals.roomsTotal)}</dd>
                   </div>
 
                   <div className="flex justify-between gap-6">
@@ -878,17 +877,17 @@ export default function PromotionsPage() {
                         ? ` (${zeile.totals.discountPercent} %)`
                         : ""}
                     </dt>
-                    <dd className="font-semibold">− {formatEuro(zeile.totals.discountTotal)} €</dd>
+                    <dd className="font-semibold">− {formatMoney(zeile.totals.discountTotal)}</dd>
                   </div>
 
                   <div className="flex justify-between gap-6">
                     <dt className="text-[#756f64]">Frühstück</dt>
-                    <dd className="font-semibold">{formatEuro(zeile.totals.breakfastTotal)} €</dd>
+                    <dd className="font-semibold">{formatMoney(zeile.totals.breakfastTotal)}</dd>
                   </div>
 
                   <div className="flex justify-between gap-6 border-t border-[#211f1b]/10 pt-2">
                     <dt className="font-bold">Gesamt</dt>
-                    <dd className="text-lg font-bold">{formatEuro(zeile.totals.total)} €</dd>
+                    <dd className="text-lg font-bold">{formatMoney(zeile.totals.total)}</dd>
                   </div>
                 </dl>
 
@@ -921,10 +920,10 @@ export default function PromotionsPage() {
                           <span className="font-semibold">{bewertung.name}</span>
                           {bewertung.requiresCode && <Badge tone="amber">Code</Badge>}
                           {bewertung.wins ? (
-                            <Badge tone="green">wirkt · {euroAusCent(bewertung.discountCents)} €</Badge>
+                            <Badge tone="green">wirkt · {formatMoneyCents(bewertung.discountCents)}</Badge>
                           ) : bewertung.applies ? (
                             <Badge tone="neutral">
-                              möglich · {euroAusCent(bewertung.discountCents)} €
+                              möglich · {formatMoneyCents(bewertung.discountCents)}
                             </Badge>
                           ) : (
                             <span className="text-[#756f64]">{bewertung.reason}</span>

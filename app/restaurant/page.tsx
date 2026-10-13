@@ -4,6 +4,7 @@ import ReservationWidget from "@/components/ReservationWidget";
 import GoogleMap from "@/components/GoogleMap";
 import { MENU_CARDS } from "@/lib/menu/cards";
 import { db } from "@/prisma/db";
+import { formatMoney } from "@/lib/money";
 
 export const dynamic = "force-dynamic";
 
@@ -454,7 +455,7 @@ export default async function RestaurantPage() {
 
                       {/* Preis */}
                       <p className="text-sm font-semibold text-[#d8c39a]">
-                        {menu ? `€ ${menu.price}` : "—"}
+                        {menu ? formatMoney(menu.price) : "—"}
                       </p>
                     </div>
                   );

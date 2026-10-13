@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { formatMoney } from "@/lib/money";
 
 const days = [
   "Dienstag",
@@ -434,7 +435,7 @@ export default function TagesmenuePage() {
                       )}
 
                       <p className="mt-3 text-sm font-bold text-[#b08a4a]">
-                        € {template.price}
+                        {formatMoney(template.price)}
                       </p>
 
                     </div>
@@ -496,7 +497,7 @@ export default function TagesmenuePage() {
 
             {price && (
               <p className="mt-5 text-xl font-bold text-[#211f1b]">
-                € {price}
+                {formatMoney(price)}
               </p>
             )}
 

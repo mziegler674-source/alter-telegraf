@@ -19,6 +19,7 @@ import {
   type MenuKind,
   formatPrice,
 } from "@/lib/menu/constants";
+import { formatMoney } from "@/lib/money";
 
 type Response = { items: MenuItem[] };
 
@@ -263,7 +264,7 @@ export default function MenuEditor({
                   </div>
 
                   <div className="flex shrink-0 items-center gap-3">
-                    <span className="font-serif text-xl">{formatPrice(item.price)} €</span>
+                    <span className="font-serif text-xl">{formatMoney(item.price)}</span>
 
                     <Button small variant="secondary" onClick={() => openForm(item)} disabled={busy}>
                       Bearbeiten

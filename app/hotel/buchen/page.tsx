@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 
 import Navbar from "@/components/Navbar";
 import { CardGuarantee, type CardGuaranteeHandle } from "@/components/hotel/CardGuarantee";
@@ -9,6 +9,15 @@ import {
   RoomDetail,
   type ShowcaseRoom,
 } from "@/components/hotel/RoomPresentation";
+import { COUNTRIES } from "@/lib/hotel/countries";
+import {
+  type FieldErrors,
+  type FieldName,
+  FIELD_ORDER,
+  MAX,
+  validateGuest,
+} from "@/lib/hotel/guest-validation";
+import { formatMoney } from "@/lib/money";
 
 type BedOption = { bedType: string; label: string; roomsAvailable: number };
 
@@ -48,12 +57,26 @@ type Offer = {
   sizeSqm: number | null;
   images: { id: number; src: string; alt: string }[];
   amenities: { code: string; name: string; icon: string | null }[];
+  /** Niedrigster Preis einer Nacht - bei schwankenden Preisen ein „ab“-Wert. */
   pricePerNight: string;
+  pricePerNightMax: string;
+  priceVaries: boolean;
+  hasIndividualPrice: boolean;
+  nightPrices: { date: string; amount: string; source: "BASE" | "DATE" }[];
   roomsAvailable: number;
   bedTypes: BedOption[];
   totals: Totals;
+  cancellationPreview: CancellationPreview | null;
   promotion: PromotionInfo | null;
   promotionCode: CodeResult;
+};
+
+/** Serverseitig gerechnet - der Browser rechnet hier nichts nach. */
+type CancellationPreview = {
+  freeUntilDate: string | null;
+  feeAmount: string | null;
+  feeReason: string | null;
+  noShowAmount: string | null;
 };
 
 // Das Angebot des Servers in die Darstellung der Zimmerkarte uebersetzen.
@@ -70,11 +93,19 @@ const toShowcase = (offer: Offer): ShowcaseRoom => ({
   amenities: offer.amenities,
   bedTypes: offer.bedTypes.map(({ bedType, label }) => ({ bedType, label })),
   price: offer.pricePerNight,
-  priceIsFrom: false,
+  // Bei schwankenden Tagespreisen ist der Kartenpreis ein „ab“-Wert.
+  priceIsFrom: offer.priceVaries,
   roomsAvailable: offer.roomsAvailable,
 });
 
-type Cancellation = { name: string; text: string[] };
+type Cancellation = {
+  name: string;
+  text: string[];
+  /** Letzter kostenfreier Tag. Nur in der Suche vorhanden. */
+  freeUntilDate?: string | null;
+  /** Streuwert des angezeigten Textes, der beim Absenden zurueckgeht. */
+  hash?: string;
+};
 
 type SearchResult = {
   checkIn: string;
@@ -107,10 +138,14 @@ type Confirmation = {
   currency: string;
   paymentMethod: string;
   guest: { firstName: string; lastName: string; email: string };
+  nightPrices?: { date: string; amount: string; source: "BASE" | "DATE" }[] | null;
+  /** true, wenn das Absenden eine bereits bestehende Buchung getroffen hat. */
+  duplicate?: boolean;
+  /** Stand des Bestätigungsversands: SENT, SKIPPED, FAILED oder null. */
+  confirmationMail?: string | null;
 };
 
-const euro = (value: string) =>
-  Number(value).toLocaleString("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 
 const formatDate = (value: string) =>
   new Intl.DateTimeFormat("de-AT", { day: "2-digit", month: "2-digit", year: "numeric" }).format(
@@ -134,6 +169,94 @@ const emptyGuest = {
   message: "",
 };
 
+/**
+ * Ein Formularfeld mit Beschriftung, Pflichtkennzeichnung und zugänglicher
+ * Fehlermeldung.
+ *
+ * Der Fehler wird NICHT nur farblich gezeigt: Er steht als Text unter dem
+ * Feld, beginnt mit einem Hinweiszeichen, ist über aria-describedby mit dem
+ * Feld verbunden und setzt aria-invalid. Damit funktioniert er auch für
+ * Vorlesesoftware und bei Farbenblindheit.
+ */
+function GuestField({
+  id,
+  label,
+  value,
+  onChange,
+  onBlur,
+  error,
+  optional,
+  type = "text",
+  autoComplete,
+  inputMode,
+  maxLength,
+  placeholder,
+  className = "",
+  children,
+}: {
+  id: FieldName;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  onBlur: () => void;
+  error: string | null;
+  optional?: boolean;
+  type?: string;
+  autoComplete?: string;
+  inputMode?: "text" | "tel" | "email" | "numeric";
+  maxLength?: number;
+  placeholder?: string;
+  className?: string;
+  children?: ReactNode;
+}) {
+  const fehlerId = `${id}-fehler`;
+
+  return (
+    <label className={`block ${className}`} htmlFor={id}>
+      <span className="text-sm font-bold">
+        {label}
+        {optional ? (
+          <span className="ml-2 font-normal text-[#756f64]">optional</span>
+        ) : (
+          <span className="ml-1 text-[#b08a4a]" aria-hidden="true">
+            *
+          </span>
+        )}
+      </span>
+
+      {children ?? (
+        <input
+          id={id}
+          name={id}
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={onBlur}
+          autoComplete={autoComplete}
+          inputMode={inputMode}
+          maxLength={maxLength}
+          placeholder={placeholder}
+          aria-required={optional ? undefined : true}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? fehlerId : undefined}
+          className={`mt-2 w-full rounded-xl border bg-white px-4 py-3.5 text-base outline-none transition focus:ring-2 focus:ring-[#b08a4a]/40 ${
+            error
+              ? "border-red-400 focus:border-red-500"
+              : "border-[#211f1b]/15 focus:border-[#b08a4a]"
+          }`}
+        />
+      )}
+
+      {error && (
+        <span id={fehlerId} role="alert" className="mt-2 block text-sm font-semibold text-red-700">
+          <span aria-hidden="true">⚠ </span>
+          {error}
+        </span>
+      )}
+    </label>
+  );
+}
+
 export default function BookingPage() {
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [stay, setStay] = useState({ checkIn: "", checkOut: "", adults: "2", children: "0" });
@@ -152,6 +275,12 @@ export default function BookingPage() {
   const karte = useRef<CardGuaranteeHandle | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // Welche Felder hat der Gast schon verlassen? Erst dann wird ein Fehler
+  // gezeigt - sonst erscheint eine Meldung, bevor überhaupt getippt wurde.
+  const [touched, setTouched] = useState<Partial<Record<FieldName, boolean>>>({});
+  const [showAllErrors, setShowAllErrors] = useState(false);
+  // Hinweis, wenn sich der Preis zwischen Übersicht und Absenden geändert hat.
+  const [priceNotice, setPriceNotice] = useState("");
 
   const selected = result?.offers.find((offer) => offer.roomTypeId === roomTypeId) ?? null;
 
@@ -239,6 +368,11 @@ export default function BookingPage() {
         // Der Code wird beim Anlegen erneut geprüft. Der Preis entsteht
         // ausschließlich auf dem Server.
         promotionCode: promoCode,
+        // Nur zum Vergleich: Weicht der Serverpreis ab, wird nicht gebucht.
+        expectedTotal: selected?.totals.total ?? null,
+        // Belegt, welche Stornobedingungen auf dem Bildschirm standen. Der
+        // Server rechnet seinen eigenen Streuwert und vergleicht.
+        acceptedPolicyHash: result?.cancellation?.hash ?? null,
       }),
     });
 
@@ -246,17 +380,72 @@ export default function BookingPage() {
     setBusy(false);
 
     if (!response.ok) {
+      // Der Preis hat sich zwischen Übersicht und Absenden geändert. Es
+      // entstand KEINE Buchung; der Gast sieht den neuen Betrag und
+      // entscheidet erneut.
+      if (response.status === 409 && data?.details?.priceChanged) {
+        setPriceNotice(
+          `Der Gesamtbetrag hat sich von ${formatMoney(
+            data.details.expectedTotal
+          )} auf ${formatMoney(
+            data.details.actualTotal
+          )} geändert. Es wurde noch nichts gebucht – bitte prüfen Sie die Übersicht und senden Sie dann erneut ab.`
+        );
+
+        await search(breakfast, true);
+        setStep(4);
+        return;
+      }
+
+      // Die Stornobedingungen wurden geändert, seit sie angezeigt wurden.
+      // Auch hier entstand KEINE Buchung; der Gast bestätigt den neuen
+      // Stand und sendet erneut ab.
+      if (response.status === 409 && data?.details?.policyChanged) {
+        setPriceNotice(
+          "Die Stornobedingungen wurden geändert, seit sie Ihnen angezeigt wurden. Es wurde noch nichts gebucht – bitte lesen Sie den neuen Stand unten und senden Sie dann erneut ab."
+        );
+        setTerms(false);
+
+        await search(breakfast, true);
+        setStep(4);
+        return;
+      }
+
       setError(data.error || "Die Buchung konnte nicht abgeschlossen werden.");
       return;
     }
+
+    setPriceNotice("");
 
     setConfirmation(data.booking);
     setStep(5);
   }
 
-  const guestComplete =
-    guest.firstName && guest.lastName && guest.email && guest.phone && guest.street &&
-    guest.postalCode && guest.city && guest.countryCode;
+  // Dieselbe Prüfung wie auf dem Server (lib/hotel/guest-validation.ts).
+  // Verbindlich ist die Serverprüfung; hier dient sie der direkten Führung.
+  const guestErrors: FieldErrors = validateGuest(guest);
+  const guestComplete = Object.keys(guestErrors).length === 0;
+
+  const fehlerFuer = (feld: FieldName) =>
+    (showAllErrors || touched[feld]) && guestErrors[feld] ? (guestErrors[feld] as string) : null;
+
+  const markiere = (feld: FieldName) => setTouched((bisher) => ({ ...bisher, [feld]: true }));
+
+  /** Springt zum ersten beanstandeten Feld. */
+  function zeigeFehler() {
+    setShowAllErrors(true);
+
+    const erstes = FIELD_ORDER.find((feld) => guestErrors[feld]);
+
+    if (!erstes) return;
+
+    const element = document.getElementById(erstes);
+
+    if (element) {
+      element.scrollIntoView({ block: "center" });
+      element.focus();
+    }
+  }
 
   const steps = ["Aufenthalt", "Zimmer", "Ihre Daten", "Prüfen", "Bestätigung"];
 
@@ -388,7 +577,7 @@ export default function BookingPage() {
                 <span>
                   <span className="block font-semibold">Frühstück hinzufügen</span>
                   <span className="mt-1 block text-sm text-[#756f64]">
-                    {euro(result.breakfastPricePerPersonNight)} € pro Person und Nacht
+                    {formatMoney(result.breakfastPricePerPersonNight)} pro Person und Nacht
                   </span>
                 </span>
               </label>
@@ -486,11 +675,11 @@ export default function BookingPage() {
                         Gesamt für {offer.totals.nights}{" "}
                         {offer.totals.nights === 1 ? "Nacht" : "Nächte"}:{" "}
                         <span className="font-bold text-[#211f1b]">
-                          {euro(offer.totals.total)} &euro;
+                          {formatMoney(offer.totals.total)}
                         </span>
                         {Number(offer.totals.discountTotal) > 0 && (
                           <span className="ml-2 text-[#b08a4a]">
-                            inkl. {euro(offer.totals.discountTotal)} &euro; Rabatt
+                            inkl. {formatMoney(offer.totals.discountTotal)} Rabatt
                             {offer.totals.discountName ? ` (${offer.totals.discountName})` : ""}
                           </span>
                         )}
@@ -540,38 +729,176 @@ export default function BookingPage() {
         {step === 3 && (
           <section className="mt-10">
             <h2 className="font-serif text-2xl">Ihre Daten</h2>
+            <p className="mt-2 max-w-xl text-[#756f64]">
+              Diese Angaben brauchen wir für Ihre Buchungsbestätigung. Mit
+              <span aria-hidden="true"> * </span>
+              <span className="sr-only"> Sternchen </span>
+              gekennzeichnete Felder sind erforderlich.
+            </p>
 
-            <div className="mt-6 grid gap-5 sm:grid-cols-2">
-              {([
-                ["firstName", "Vorname", "text"],
-                ["lastName", "Nachname", "text"],
-                ["email", "E-Mail", "email"],
-                ["phone", "Telefon", "tel"],
-                ["street", "Straße und Hausnummer", "text"],
-                ["postalCode", "PLZ", "text"],
-                ["city", "Ort", "text"],
-                ["countryCode", "Land (z. B. AT)", "text"],
-              ] as const).map(([key, label, type]) => (
-                <label key={key} className="block">
-                  <span className="text-sm font-bold">{label}</span>
-                  <input
-                    type={type}
-                    value={guest[key]}
-                    onChange={(e) => setGuest({ ...guest, [key]: e.target.value })}
-                    className={input}
-                  />
-                </label>
-              ))}
+            {showAllErrors && !guestComplete && (
+              <div
+                role="alert"
+                className="mt-6 rounded-xl border border-red-300 bg-red-50 p-5 text-sm text-red-800"
+              >
+                <p className="font-bold">Bitte prüfen Sie Ihre Angaben:</p>
+                <ul className="mt-2 list-disc space-y-1 pl-5">
+                  {FIELD_ORDER.filter((feld) => guestErrors[feld]).map((feld) => (
+                    <li key={feld}>{guestErrors[feld]}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
-              <label className="block sm:col-span-2">
-                <span className="text-sm font-bold">Bemerkung (optional)</span>
+            <div className="mt-6 grid gap-6 sm:grid-cols-2">
+              <GuestField
+                id="firstName"
+                label="Vorname"
+                value={guest.firstName}
+                onChange={(wert) => setGuest({ ...guest, firstName: wert })}
+                onBlur={() => markiere("firstName")}
+                error={fehlerFuer("firstName")}
+                autoComplete="given-name"
+                maxLength={MAX.name}
+              />
+
+              <GuestField
+                id="lastName"
+                label="Nachname"
+                value={guest.lastName}
+                onChange={(wert) => setGuest({ ...guest, lastName: wert })}
+                onBlur={() => markiere("lastName")}
+                error={fehlerFuer("lastName")}
+                autoComplete="family-name"
+                maxLength={MAX.name}
+              />
+
+              <GuestField
+                id="email"
+                label="E-Mail"
+                type="email"
+                inputMode="email"
+                value={guest.email}
+                onChange={(wert) => setGuest({ ...guest, email: wert })}
+                onBlur={() => markiere("email")}
+                error={fehlerFuer("email")}
+                autoComplete="email"
+                maxLength={MAX.email}
+                placeholder="name@beispiel.at"
+              />
+
+              <GuestField
+                id="phone"
+                label="Telefon"
+                type="tel"
+                inputMode="tel"
+                value={guest.phone}
+                onChange={(wert) => setGuest({ ...guest, phone: wert })}
+                onBlur={() => markiere("phone")}
+                error={fehlerFuer("phone")}
+                autoComplete="tel"
+                maxLength={MAX.phone}
+                placeholder="+43 664 1234567"
+              />
+
+              <GuestField
+                id="street"
+                label="Straße und Hausnummer"
+                value={guest.street}
+                onChange={(wert) => setGuest({ ...guest, street: wert })}
+                onBlur={() => markiere("street")}
+                error={fehlerFuer("street")}
+                autoComplete="street-address"
+                maxLength={MAX.street}
+                className="sm:col-span-2"
+              />
+
+              <GuestField
+                id="countryCode"
+                label="Land"
+                value={guest.countryCode}
+                onChange={(wert) => setGuest({ ...guest, countryCode: wert })}
+                onBlur={() => markiere("countryCode")}
+                error={fehlerFuer("countryCode")}
+              >
+                <select
+                  id="countryCode"
+                  name="countryCode"
+                  value={guest.countryCode}
+                  onChange={(e) => setGuest({ ...guest, countryCode: e.target.value })}
+                  onBlur={() => markiere("countryCode")}
+                  autoComplete="country"
+                  aria-required={true}
+                  aria-invalid={fehlerFuer("countryCode") ? true : undefined}
+                  aria-describedby={
+                    fehlerFuer("countryCode") ? "countryCode-fehler" : undefined
+                  }
+                  className={`mt-2 w-full rounded-xl border bg-white px-4 py-3.5 text-base outline-none transition focus:ring-2 focus:ring-[#b08a4a]/40 ${
+                    fehlerFuer("countryCode")
+                      ? "border-red-400 focus:border-red-500"
+                      : "border-[#211f1b]/15 focus:border-[#b08a4a]"
+                  }`}
+                >
+                  {COUNTRIES.map((land) => (
+                    <option key={land.code} value={land.code}>
+                      {land.name}
+                    </option>
+                  ))}
+                </select>
+              </GuestField>
+
+              <div className="grid gap-6 sm:grid-cols-2">
+                <GuestField
+                  id="postalCode"
+                  label="PLZ"
+                  value={guest.postalCode}
+                  onChange={(wert) => setGuest({ ...guest, postalCode: wert })}
+                  onBlur={() => markiere("postalCode")}
+                  error={fehlerFuer("postalCode")}
+                  autoComplete="postal-code"
+                  maxLength={MAX.postalCode}
+                />
+
+                <GuestField
+                  id="city"
+                  label="Ort"
+                  value={guest.city}
+                  onChange={(wert) => setGuest({ ...guest, city: wert })}
+                  onBlur={() => markiere("city")}
+                  error={fehlerFuer("city")}
+                  autoComplete="address-level2"
+                  maxLength={MAX.city}
+                />
+              </div>
+
+              <GuestField
+                id="message"
+                label="Bemerkung"
+                optional
+                value={guest.message}
+                onChange={(wert) => setGuest({ ...guest, message: wert })}
+                onBlur={() => markiere("message")}
+                error={fehlerFuer("message")}
+                className="sm:col-span-2"
+              >
                 <textarea
+                  id="message"
+                  name="message"
                   rows={3}
                   value={guest.message}
                   onChange={(e) => setGuest({ ...guest, message: e.target.value })}
-                  className={`${input} resize-y`}
+                  onBlur={() => markiere("message")}
+                  maxLength={MAX.message}
+                  aria-invalid={fehlerFuer("message") ? true : undefined}
+                  aria-describedby={fehlerFuer("message") ? "message-fehler" : undefined}
+                  placeholder="Späte Anreise, Allergien, Wünsche …"
+                  className={`mt-2 w-full resize-y rounded-xl border bg-white px-4 py-3.5 text-base outline-none transition focus:ring-2 focus:ring-[#b08a4a]/40 ${
+                    fehlerFuer("message")
+                      ? "border-red-400 focus:border-red-500"
+                      : "border-[#211f1b]/15 focus:border-[#b08a4a]"
+                  }`}
                 />
-              </label>
+              </GuestField>
             </div>
 
             <div className="mt-8 flex flex-wrap gap-3">
@@ -585,9 +912,15 @@ export default function BookingPage() {
 
               <button
                 type="button"
-                onClick={() => setStep(4)}
-                disabled={!guestComplete}
-                className="rounded-full bg-[#211f1b] px-8 py-3 text-sm font-bold uppercase tracking-wider text-white transition hover:bg-[#3a3630] disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() => {
+                  if (!guestComplete) {
+                    zeigeFehler();
+                    return;
+                  }
+
+                  setStep(4);
+                }}
+                className="rounded-full bg-[#211f1b] px-8 py-3 text-sm font-bold uppercase tracking-wider text-white transition hover:bg-[#3a3630]"
               >
                 Weiter zur Prüfung
               </button>
@@ -672,7 +1005,7 @@ export default function BookingPage() {
                 <p className="mt-3 text-sm font-semibold text-[#315c45]">
                   ✓ Code „{selected.promotionCode.code}“ angewendet:{" "}
                   {selected.totals.discountName} – Sie sparen{" "}
-                  {euro(selected.totals.discountTotal)} &euro;.
+                  {formatMoney(selected.totals.discountTotal)}.
                 </p>
               )}
 
@@ -686,11 +1019,48 @@ export default function BookingPage() {
               )}
             </div>
 
+            {priceNotice && (
+              <div
+                role="alert"
+                className="mt-6 rounded-xl border border-[#b08a4a]/40 bg-[#f4ead5] p-5 text-sm font-semibold text-[#6b5125]"
+              >
+                {priceNotice}
+              </div>
+            )}
+
             <div className="mt-6 rounded-2xl border border-[#211f1b]/10 bg-white">
               <div className="flex justify-between px-5 py-3.5 text-sm">
-                <span className="text-[#756f64]">Zimmer</span>
-                <span className="font-semibold">{euro(selected.totals.roomsTotal)} €</span>
+                <span className="text-[#756f64]">
+                  Zimmer
+                  <span className="ml-1 text-xs">
+                    ({selected.totals.nights}{" "}
+                    {selected.totals.nights === 1 ? "Nacht" : "Nächte"})
+                  </span>
+                </span>
+                <span className="font-semibold">{formatMoney(selected.totals.roomsTotal)}</span>
               </div>
+
+              {/* Preis jeder einzelnen Übernachtung. Bei unterschiedlichen
+                  Preisen ist das die einzige nachvollziehbare Darstellung. */}
+              <details className="border-t border-[#211f1b]/10 px-5 py-3" open={selected.priceVaries}>
+                <summary className="cursor-pointer text-sm text-[#756f64]">
+                  Preis je Übernachtung
+                  {selected.priceVaries
+                    ? ` (${formatMoney(selected.pricePerNight)} bis ${formatMoney(
+                        selected.pricePerNightMax
+                      )})`
+                    : ` (${formatMoney(selected.pricePerNight)} pro Nacht)`}
+                </summary>
+
+                <ul className="mt-3 space-y-1">
+                  {selected.nightPrices.map((nacht) => (
+                    <li key={nacht.date} className="flex justify-between text-sm">
+                      <span className="text-[#756f64]">{formatDate(nacht.date)}</span>
+                      <span className="font-semibold">{formatMoney(nacht.amount)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </details>
 
               {Number(selected.totals.discountTotal) > 0 && (
                 <div className="flex justify-between px-5 py-3.5 text-sm text-[#b08a4a]">
@@ -702,20 +1072,20 @@ export default function BookingPage() {
                       : ""}
                     {selected.promotion?.source === "CODE" ? " · Aktionscode" : ""}
                   </span>
-                  <span className="font-semibold">− {euro(selected.totals.discountTotal)} €</span>
+                  <span className="font-semibold">− {formatMoney(selected.totals.discountTotal)}</span>
                 </div>
               )}
 
               {breakfast && (
                 <div className="flex justify-between px-5 py-3.5 text-sm">
                   <span className="text-[#756f64]">Frühstück</span>
-                  <span className="font-semibold">{euro(selected.totals.breakfastTotal)} €</span>
+                  <span className="font-semibold">{formatMoney(selected.totals.breakfastTotal)}</span>
                 </div>
               )}
 
               <div className="flex justify-between border-t border-[#211f1b]/10 px-5 py-4">
                 <span className="font-bold">Gesamt</span>
-                <span className="font-serif text-xl">{euro(selected.totals.total)} €</span>
+                <span className="font-serif text-xl">{formatMoney(selected.totals.total)}</span>
               </div>
             </div>
 
@@ -738,6 +1108,35 @@ export default function BookingPage() {
               <div className="mt-4 rounded-xl border border-[#b08a4a]/40 bg-white p-5 text-sm leading-6">
                 <p className="font-semibold">Stornierungsbedingungen</p>
 
+                {/* Datum und Betrag kommen gerechnet vom Server. Hier wird
+                    nichts nachgerechnet - der Browser zeigt nur an. */}
+                {selected?.cancellationPreview?.freeUntilDate && (
+                  <p className="mt-2 font-semibold text-[#315c45]">
+                    Kostenfrei stornierbar bis einschließlich{" "}
+                    {formatDate(selected.cancellationPreview.freeUntilDate)}.
+                  </p>
+                )}
+
+                {selected?.cancellationPreview?.feeAmount && (
+                  <p className="mt-1 text-[#756f64]">
+                    Bei einer Stornierung danach berechnen wir{" "}
+                    <span className="font-semibold text-[#211f1b]">
+                      {formatMoney(selected.cancellationPreview.feeAmount)}
+                    </span>
+                    .
+                  </p>
+                )}
+
+                {selected?.cancellationPreview?.noShowAmount && (
+                  <p className="mt-1 text-[#756f64]">
+                    Bei Nichtanreise berechnen wir{" "}
+                    <span className="font-semibold text-[#211f1b]">
+                      {formatMoney(selected.cancellationPreview.noShowAmount)}
+                    </span>
+                    .
+                  </p>
+                )}
+
                 <ul className="mt-2 space-y-1 text-[#756f64]">
                   {result.cancellation.text.map((zeile) => (
                     <li key={zeile}>{zeile}</li>
@@ -754,7 +1153,10 @@ export default function BookingPage() {
                   onChange={(e) => setTerms(e.target.checked)}
                   className="mt-0.5 h-5 w-5 accent-[#b08a4a]"
                 />
-                <span>Ich akzeptiere die Buchungsbedingungen.</span>
+                <span>
+                  Ich akzeptiere die Buchungsbedingungen und die oben genannten
+                  Stornierungsbedingungen.
+                </span>
               </label>
 
               <label className="flex cursor-pointer items-start gap-3 text-sm">
@@ -794,9 +1196,28 @@ export default function BookingPage() {
           <section className="mt-10">
             <h2 className="font-serif text-3xl">Vielen Dank für Ihre Buchung.</h2>
 
-            <p className="mt-3 text-[#756f64]">
-              Wir haben Ihre Buchung erhalten. Das Hotel bestätigt sie Ihnen in Kürze.
-            </p>
+            {confirmation.duplicate ? (
+              <p className="mt-3 text-[#756f64]">
+                Diese Buchung bestand bereits – wir haben sie nicht doppelt angelegt. Es gilt die
+                unten genannte Buchungsnummer.
+              </p>
+            ) : (
+              <p className="mt-3 text-[#756f64]">
+                Ihre Buchung ist verbindlich bestätigt und gespeichert.
+              </p>
+            )}
+
+            {/* Nur das versprechen, was tatsächlich passiert ist. */}
+            {confirmation.confirmationMail === "SENT" ? (
+              <p className="mt-2 text-[#756f64]">
+                Die Bestätigung ist an {confirmation.guest.email} unterwegs.
+              </p>
+            ) : (
+              <p className="mt-2 text-[#756f64]">
+                Bitte notieren Sie Ihre Buchungsnummer: Eine Bestätigung per E-Mail konnten wir
+                gerade nicht verschicken. Ihre Buchung ist davon unberührt.
+              </p>
+            )}
 
             <p className="mt-8 text-xs font-bold uppercase tracking-[0.25em] text-[#b08a4a]">
               Buchungsnummer
@@ -815,7 +1236,7 @@ export default function BookingPage() {
                 ["Zimmer", confirmation.roomTypeName],
                 ["Bettart", confirmation.bedTypeLabel],
                 ["Frühstück", confirmation.breakfast ? "ja" : "nein"],
-                ["Gesamtpreis", `${euro(confirmation.totals.total)} ${confirmation.currency}`],
+                ["Gesamtpreis", formatMoney(confirmation.totals.total)],
                 ["Zahlung", "vor Ort im Hotel"],
                 ["Status", confirmation.status === "PENDING" ? "in Prüfung" : confirmation.status],
               ].map(([label, value]) => (

@@ -8,6 +8,10 @@
 
 import { fromCents, toCents } from "@/lib/hotel/pricing";
 
+import { formatMoney } from "@/lib/money";
+
+import type { ConsentRecord } from "./consent";
+
 export const CANCELLATION_BASES = [
   "PERCENT_OF_TOTAL",
   "FIRST_NIGHT",
@@ -195,7 +199,7 @@ export function describePolicy(policy: PolicyLike): string[] {
     const ab = `Ab weniger als ${tage(rule.appliesFromDaysBefore)} vor Anreise`;
 
     if (rule.basis === "FIXED_AMOUNT") {
-      zeilen.push(`${ab} berechnen wir ${Number(rule.feeAmount ?? "0").toFixed(2)} €.`);
+      zeilen.push(`${ab} berechnen wir ${formatMoney(rule.feeAmount ?? "0")}.`);
     } else if (rule.basis === "FIRST_NIGHT") {
       zeilen.push(`${ab} berechnen wir den Preis der ersten Nacht.`);
     } else {
@@ -224,22 +228,93 @@ export type PolicySnapshot = PolicyLike & {
   /** Letzter Tag, an dem kostenlos storniert werden kann, YYYY-MM-DD. */
   freeUntilDate: string | null;
   text: string[];
+  /**
+   * Nachweis der Zustimmung des Gastes. Fehlt er, ist nichts belegt - er
+   * wird niemals nachtraeglich ergaenzt.
+   */
+  consent?: ConsentRecord;
 };
+
+/**
+ * Der letzte Tag, an dem kostenlos storniert werden kann. Wer an diesem Tag
+ * storniert, zahlt nichts. Null bedeutet: jederzeit kostenfrei.
+ */
+export function freeUntilDate(rules: RuleLike[], checkIn: string): string | null {
+  const frist = freeUntilDaysBefore(rules);
+
+  if (frist === null || !Number.isFinite(frist)) return null;
+
+  return new Date(Date.parse(`${checkIn}T00:00:00Z`) - frist * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+}
+
+/** Der Tag nach Ablauf der Frist - der erste, an dem eine Gebuehr anfaellt. */
+function firstChargeableDate(rules: RuleLike[], checkIn: string): string | null {
+  const frei = freeUntilDate(rules, checkIn);
+
+  if (!frei) return null;
+
+  return new Date(Date.parse(`${frei}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
+}
+
+export type CancellationPreview = {
+  /** Letzter kostenfreier Tag, YYYY-MM-DD, oder null. */
+  freeUntilDate: string | null;
+  /** Gebuehr bei einer Stornierung nach Ablauf der Frist. */
+  feeAmount: string | null;
+  feeReason: string | null;
+  /** Gebuehr bei Nichtanreise. */
+  noShowAmount: string | null;
+};
+
+/**
+ * Was eine Stornierung diese Buchung kosten wuerde - serverseitig gerechnet,
+ * aus der geltenden Regel und dem tatsaechlichen Preis.
+ *
+ * Die Regel selbst wird dabei nicht veraendert: Gerechnet wird mit
+ * `calculateCancellationFee`, also genau so, wie spaeter abgerechnet wird.
+ */
+export function previewCancellation(input: {
+  policy: PolicyLike;
+  totalAmount: string;
+  /** Preis der ersten Nacht. Null, wenn unbekannt. */
+  firstNightAmount: string | null;
+  checkIn: string;
+}): CancellationPreview {
+  const frei = freeUntilDate(input.policy.rules, input.checkIn);
+  const faellig = firstChargeableDate(input.policy.rules, input.checkIn);
+
+  // Ohne Regel gibt es keine Gebuehr - und ohne Preis der ersten Nacht
+  // lassen wir das Feld leer, statt den Gesamtbetrag zu unterstellen.
+  const gebuehr =
+    faellig === null
+      ? null
+      : calculateCancellationFee({
+          policy: input.policy,
+          totalAmount: input.totalAmount,
+          firstNightAmount: input.firstNightAmount ?? "0.00",
+          checkIn: input.checkIn,
+          cancelledOn: faellig,
+        });
+
+  const brauchtNacht = gebuehr?.basis === "FIRST_NIGHT" && input.firstNightAmount === null;
+
+  const noShowProzent = Number(input.policy.noShowFeePercent ?? "0");
+
+  return {
+    freeUntilDate: frei,
+    feeAmount: gebuehr && !brauchtNacht ? gebuehr.amount : null,
+    feeReason: gebuehr && !brauchtNacht ? gebuehr.reason : null,
+    noShowAmount:
+      noShowProzent > 0 ? prozentBetrag(input.totalAmount, noShowProzent) : null,
+  };
+}
 
 export function buildPolicySnapshot(
   policy: PolicyLike,
   context: { checkIn: string; frozenAt: string }
 ): PolicySnapshot {
-  const frist = freeUntilDaysBefore(policy.rules);
-
-  // Der letzte kostenfreie Tag: Wer an diesem Tag storniert, zahlt nichts.
-  const freeUntilDate =
-    frist === null || !Number.isFinite(frist)
-      ? null
-      : new Date(Date.parse(`${context.checkIn}T00:00:00Z`) - frist * 86_400_000)
-          .toISOString()
-          .slice(0, 10);
-
   return {
     version: 1,
     code: policy.code,
@@ -253,7 +328,7 @@ export function buildPolicySnapshot(
       feeAmount: rule.feeAmount,
     })),
     frozenAt: context.frozenAt,
-    freeUntilDate,
+    freeUntilDate: freeUntilDate(policy.rules, context.checkIn),
     text: describePolicy(policy),
   };
 }

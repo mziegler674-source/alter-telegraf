@@ -14,7 +14,11 @@ import {
   type PolicyLike,
   type PolicySnapshot,
   buildPolicySnapshot,
+  freeUntilDate,
+  previewCancellation,
+  type CancellationPreview,
   describePolicy,
+  readPolicySnapshot,
 } from "@/lib/hotel/cancellation";
 import {
   type RoomAmenity,
@@ -34,17 +38,28 @@ import {
   toCents,
 } from "@/lib/hotel/pricing";
 import {
+  type NightPrice,
+  type RatePriceRow,
+  nightsTotalCents,
+  priceSpan,
+  resolveNightPrices,
+  stayNights,
+} from "@/lib/hotel/rate-calendar";
+import {
   type CodeResult,
   type PromotionLike,
   normalizeCode,
   resolveDiscountWithCode,
 } from "@/lib/hotel/promotions";
 import {
+  assertCardNotReused,
   guaranteeRequirement,
   paymentProviderName,
   verifyCardSetup,
 } from "@/lib/hotel/payment/guarantee";
+import { buildConsentRecord, hashPolicyText } from "@/lib/hotel/consent";
 import { bookingNumber } from "@/lib/hotel/booking-number";
+import { cleanGuest, firstError, validateGuest } from "@/lib/hotel/guest-validation";
 import { enqueueAvailabilityForBooking } from "@/lib/hotel/channel/sync";
 import { todayInHotelTimezone } from "@/lib/hotel/time";
 import { sendHotelBookingConfirmation } from "@/lib/mail/notifications";
@@ -270,6 +285,44 @@ export async function loadPricingContext(hotelId: number) {
 }
 
 /**
+ * Preiszeilen fuer einen Aufenthalt: Grundpreise UND die Tagespreise der
+ * betroffenen Naechte.
+ *
+ * Welcher Preis am Ende gilt, entscheidet allein
+ * lib/hotel/rate-calendar.ts - hier wird nur geladen.
+ */
+export async function loadRatePriceRows(
+  ratePlanId: number,
+  checkIn: string,
+  checkOut: string
+): Promise<RatePriceRow[]> {
+  const von = Temporal.PlainDate.from(checkIn);
+  // Die letzte Nacht ist der Tag vor der Abreise.
+  const bis = Temporal.PlainDate.from(checkOut);
+
+  const [grundpreise, tagespreise] = await Promise.all([
+    db.orm.hotel.RatePrice
+      .where({ ratePlanId })
+      .where((p) => p.date.isNull())
+      .select("roomTypeId", "occupancy", "amount", "date")
+      .all(),
+    db.orm.hotel.RatePrice
+      .where({ ratePlanId })
+      .where((p) => p.date.gte(von))
+      .where((p) => p.date.lt(bis))
+      .select("roomTypeId", "occupancy", "amount", "date")
+      .all(),
+  ]);
+
+  return [...grundpreise, ...tagespreise].map((row) => ({
+    roomTypeId: row.roomTypeId,
+    occupancy: row.occupancy,
+    date: row.date === null ? null : String(row.date),
+    amount: String(row.amount),
+  }));
+}
+
+/**
  * Bestehende Belegungen im Zeitraum, auf Ebene der einzelnen Buchungszimmer.
  * Grundlage ist ausschliesslich BookingRoom - es wird kein zusaetzlicher
  * Zaehler gefuehrt, der auseinanderlaufen koennte.
@@ -332,10 +385,25 @@ export type StayOffer = {
   sizeSqm: number | null;
   images: RoomImage[];
   amenities: RoomAmenity[];
+  /** Niedrigster Preis einer Nacht. Bei schwankenden Preisen ein „ab“-Wert. */
   pricePerNight: string;
+  /** Hoechster Preis einer Nacht. */
+  pricePerNightMax: string;
+  /** Unterscheiden sich die Naechte im Preis? */
+  priceVaries: boolean;
+  /** Mindestens eine Nacht hat einen hinterlegten Tagespreis. */
+  hasIndividualPrice: boolean;
+  /** Preis je Nacht - die Grundlage der Summe und der Aufschluesselung. */
+  nightPrices: NightPrice[];
   roomsAvailable: number;
   bedTypes: { bedType: BedType; label: string; roomsAvailable: number }[];
   totals: ReturnType<typeof calculateStay>;
+  /**
+   * Was eine Stornierung dieses Angebots kosten wuerde - konkretes Datum
+   * und konkreter Betrag, serverseitig aus der geltenden Regel und diesem
+   * Preis gerechnet. Null, wenn keine Richtlinie hinterlegt ist.
+   */
+  cancellationPreview: CancellationPreview | null;
   /** Welche Aktion wirkt und woher sie kommt. */
   promotion: {
     code: string;
@@ -349,7 +417,10 @@ export type StayOffer = {
 
 export type QuoteInput = {
   nights: number;
-  pricePerNight: string;
+  /** Gleichbleibender Preis je Nacht. nightPrices hat Vorrang. */
+  pricePerNight?: string;
+  /** Preis je Nacht, aufgeloest aus Grundpreis und Tagespreisen. */
+  nightPrices?: NightPrice[];
   persons: number;
   breakfast: boolean;
   /** Preis je Person und Nacht, oder null wenn nicht angeboten. */
@@ -373,7 +444,10 @@ export type QuoteInput = {
  * eine Vorschau kann deshalb nicht von der tatsaechlichen Buchung abweichen.
  */
 export function quoteOffer(input: QuoteInput) {
-  const roomsTotalCents = toCents(input.pricePerNight) * input.nights;
+  const roomsTotalCents =
+    input.nightPrices && input.nightPrices.length > 0
+      ? nightsTotalCents(input.nightPrices)
+      : toCents(input.pricePerNight ?? "0") * input.nights;
 
   const { discount, code } = resolveDiscountWithCode(
     input.promotions,
@@ -393,6 +467,7 @@ export function quoteOffer(input: QuoteInput) {
   const totals = calculateStay({
     nights: input.nights,
     pricePerNight: input.pricePerNight,
+    nightPrices: input.nightPrices,
     breakfastPersons: input.breakfast && input.breakfastPrice ? input.persons : 0,
     breakfastPricePerPersonNight: input.breakfastPrice ?? "0",
     discount: discount
@@ -400,7 +475,7 @@ export function quoteOffer(input: QuoteInput) {
       : null,
   });
 
-  return { discount, code, totals, roomsTotalCents };
+  return { discount, code, totals, roomsTotalCents, nightPrices: input.nightPrices ?? null };
 }
 
 /**
@@ -450,6 +525,15 @@ export async function searchStay(query: StayQuery) {
   const allocRooms: AllocRoom[] = rooms;
   const heute = todayInHotelTimezone(hotel.timezone);
 
+  // Die einzelnen Naechte des Aufenthalts und alle dafuer hinterlegten
+  // Preise. Welcher Preis je Nacht gilt, entscheidet rate-calendar.ts.
+  const naechte = stayNights(query.checkIn, query.checkOut);
+  const priceRows = await loadRatePriceRows(
+    context.ratePlan.id,
+    query.checkIn,
+    query.checkOut
+  );
+
   // Redaktionelle Daten fuer die Zimmerkarten. Sie beeinflussen Verfuegbarkeit
   // und Preis nicht, sondern ergaenzen nur die Darstellung.
   const presentations = await loadRoomPresentations(hotel.id);
@@ -495,11 +579,24 @@ export async function searchStay(query: StayQuery) {
 
     if (bedTypes.length === 0) continue;
 
+    // Preis je Nacht. Fehlt fuer eine Nacht jeder Preis, wird die Kategorie
+    // nicht angeboten - es wird nichts geschaetzt.
+    const nightPrices = resolveNightPrices({
+      nights: naechte,
+      rows: priceRows,
+      roomTypeId: base.roomTypeId,
+      occupancy: persons,
+    });
+
+    if (!nightPrices) continue;
+
+    const spanne = priceSpan(nightPrices);
+
     // Rabatt je Kategorie: Aktionen koennen auf Zimmerarten eingeschraenkt
     // sein, deshalb wird hier und nicht einmal pauschal entschieden.
     const angebot = quoteOffer({
       nights,
-      pricePerNight: base.pricePerNight,
+      nightPrices,
       persons,
       breakfast: query.breakfast,
       breakfastPrice: breakfastPrice,
@@ -527,10 +624,24 @@ export async function searchStay(query: StayQuery) {
       sizeSqm: presentation?.sizeSqm ?? null,
       images: presentation?.images ?? [],
       amenities: presentation?.amenities ?? [],
-      pricePerNight: base.pricePerNight,
+      pricePerNight: spanne.min,
+      pricePerNightMax: spanne.max,
+      priceVaries: spanne.varies,
+      hasIndividualPrice: spanne.hasIndividual,
+      nightPrices,
       roomsAvailable,
       bedTypes,
       totals: angebot.totals,
+      // Grundlage ist der Preis DIESES Angebots. Die erste Nacht kommt aus
+      // den aufgeloesten Nachtpreisen, nicht aus dem Gesamtbetrag.
+      cancellationPreview: context.cancellationPolicy
+        ? previewCancellation({
+            policy: context.cancellationPolicy,
+            totalAmount: angebot.totals.total,
+            firstNightAmount: nightPrices[0]?.amount ?? null,
+            checkIn: query.checkIn,
+          })
+        : null,
       promotion: angebot.discount
         ? {
             code: angebot.discount.code,
@@ -558,10 +669,25 @@ export async function searchStay(query: StayQuery) {
     // Die Stornobedingungen stammen aus der aktiven Richtlinie. Ändert der
     // Betrieb sie, ändert sich dieser Text ohne Codeänderung mit.
     cancellation: context.cancellationPolicy
-      ? {
-          name: context.cancellationPolicy.name,
-          text: describePolicy(context.cancellationPolicy),
-        }
+      ? (() => {
+          const text = describePolicy(context.cancellationPolicy);
+
+          return {
+            name: context.cancellationPolicy.name,
+            text,
+            /** Letzter kostenfreier Tag, YYYY-MM-DD, oder null. */
+            freeUntilDate: freeUntilDate(
+              context.cancellationPolicy.rules,
+              query.checkIn
+            ),
+            /**
+             * Streuwert des angezeigten Textes. Die Buchungsstrecke schickt
+             * ihn beim Absenden zurueck; damit ist belegt, welcher Wortlaut
+             * auf dem Bildschirm stand.
+             */
+            hash: hashPolicyText(text),
+          };
+        })()
       : null,
     // Verlangt der Rate Plan eine Kartengarantie? Die Buchungsstrecke
     // blendet danach die Kartenerfassung ein.
@@ -607,50 +733,46 @@ export type GuestInput = {
   message: string | null;
 };
 
-function readText(raw: Record<string, unknown>, key: string, label: string, max: number, required = true) {
-  const value = String(raw[key] ?? "").trim();
-
-  if (!value) {
-    if (required) throw new HttpError(400, `${label} ist erforderlich.`);
-    return null;
-  }
-
-  if (value.length > max) {
-    throw new HttpError(400, `${label} darf höchstens ${max} Zeichen haben.`);
-  }
-
-  return value;
-}
-
+/**
+ * Prueft und bereinigt die Gastangaben.
+ *
+ * Die Regeln stehen in lib/hotel/guest-validation.ts und gelten fuer
+ * Browser und Server gleichermassen - diese Pruefung hier ist die
+ * verbindliche. Im Fehlerfall gehen die Meldungen je Feld mit in die
+ * Antwort, damit das Formular sie an der richtigen Stelle anzeigen kann.
+ */
 export function parseGuest(raw: Record<string, unknown>): GuestInput {
-  const email = readText(raw, "email", "E-Mail", 160) as string;
+  const eingabe = {
+    firstName: typeof raw.firstName === "string" ? raw.firstName : null,
+    lastName: typeof raw.lastName === "string" ? raw.lastName : null,
+    email: typeof raw.email === "string" ? raw.email : null,
+    phone: typeof raw.phone === "string" ? raw.phone : null,
+    street: typeof raw.street === "string" ? raw.street : null,
+    postalCode: typeof raw.postalCode === "string" ? raw.postalCode : null,
+    city: typeof raw.city === "string" ? raw.city : null,
+    countryCode: typeof raw.countryCode === "string" ? raw.countryCode : null,
+    message: typeof raw.message === "string" ? raw.message : null,
+  };
 
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
-    throw new HttpError(400, "Bitte eine gültige E-Mail-Adresse angeben.");
+  const fehler = validateGuest(eingabe);
+  const erster = firstError(fehler);
+
+  if (erster) {
+    throw new HttpError(400, erster.message, { fieldErrors: fehler, field: erster.field });
   }
 
-  const phone = readText(raw, "phone", "Telefon", 40) as string;
-
-  if (!/^\+?[0-9\s\-()/]{6,}$/.test(phone)) {
-    throw new HttpError(400, "Bitte eine gültige Telefonnummer angeben.");
-  }
-
-  const countryCode = (readText(raw, "countryCode", "Land", 2) as string).toUpperCase();
-
-  if (!/^[A-Z]{2}$/.test(countryCode)) {
-    throw new HttpError(400, "Land muss ein zweistelliger Ländercode sein, z. B. AT.");
-  }
+  const sauber = cleanGuest(eingabe);
 
   return {
-    firstName: readText(raw, "firstName", "Vorname", 80) as string,
-    lastName: readText(raw, "lastName", "Nachname", 80) as string,
-    email,
-    phone,
-    street: readText(raw, "street", "Straße", 160) as string,
-    postalCode: readText(raw, "postalCode", "PLZ", 12) as string,
-    city: readText(raw, "city", "Ort", 80) as string,
-    countryCode,
-    message: readText(raw, "message", "Bemerkung", 1000, false),
+    firstName: sauber.firstName,
+    lastName: sauber.lastName,
+    email: sauber.email,
+    phone: sauber.phone,
+    street: sauber.street,
+    postalCode: sauber.postalCode,
+    city: sauber.city,
+    countryCode: sauber.countryCode,
+    message: sauber.message,
   };
 }
 
@@ -669,7 +791,31 @@ export type CreateBookingInput = {
    * prueft sie beim Anbieter nach, bevor eine Buchung entsteht.
    */
   cardSetupRef?: string | null;
+  /**
+   * Gesamtbetrag, den der Gast in der Uebersicht gesehen hat.
+   *
+   * Dient ausschliesslich dem VERGLEICH. Gerechnet wird immer serverseitig;
+   * weicht der Betrag ab, entsteht keine Buchung, sondern ein Hinweis mit
+   * dem neuen Preis. So wird nie stillschweigend ein anderer Betrag
+   * abgeschlossen als angezeigt - in keine der beiden Richtungen.
+   */
+  expectedTotal?: string | null;
+  /**
+   * Streuwert der Stornobedingungen, die dem Gast angezeigt wurden.
+   *
+   * Dient ausschliesslich dem VERGLEICH: Der Server rechnet seinen eigenen
+   * Streuwert aus dem eingefrorenen Text und vergleicht. Weicht er ab,
+   * wurden die Bedingungen zwischen Anzeige und Absenden geaendert - dann
+   * entsteht keine Buchung, sondern ein Hinweis mit dem neuen Wortlaut.
+   *
+   * Fehlt der Wert, entsteht die Buchung weiterhin; im Nachweis steht dann,
+   * dass die Anzeige nicht bestaetigt wurde.
+   */
+  acceptedPolicyHash?: string | null;
 };
+
+/** Zeitfenster, in dem ein erneutes Absenden als Wiederholung gilt. */
+const DOPPELKLICK_FENSTER_MINUTEN = 10;
 
 export async function createBooking(input: CreateBookingInput) {
   // Die interne ID bleibt im Service; nach aussen ist die Buchungsnummer die
@@ -722,7 +868,9 @@ async function speichereBuchung(input: CreateBookingInput) {
   // Browser. Die Karte wird VOR dem Anlegen der Buchung geprueft: Schlaegt
   // die Pruefung fehl, entsteht gar keine Buchung.
   const garantie = await guaranteeRequirement(context.ratePlan.id);
-  const karte = garantie.required ? await verifyCardSetup(input.cardSetupRef ?? "") : null;
+  const karte = garantie.required
+    ? await verifyCardSetup(input.cardSetupRef ?? "", { email: input.guest.email })
+    : null;
 
   return db.transaction(async (tx) => {
     // Schreibzugriff auf die Hotelzeile: haelt eine exklusive Zeilensperre bis
@@ -753,6 +901,34 @@ async function speichereBuchung(input: CreateBookingInput) {
     // Preis ausschliesslich aus der Serverberechnung, nie aus dem Frontend.
     const totals = offer.totals;
 
+    // Hat sich der Preis zwischen Uebersicht und Absenden geaendert? Das
+    // kann passieren, wenn der Betrieb in der Zwischenzeit einen Tagespreis
+    // aendert oder eine Aktion endet. Dann wird nicht gebucht, sondern der
+    // neue Preis gemeldet.
+    if (input.expectedTotal) {
+      let erwartet: number | null = null;
+
+      try {
+        erwartet = toCents(input.expectedTotal);
+      } catch {
+        erwartet = null;
+      }
+
+      if (erwartet !== null && erwartet !== toCents(totals.total)) {
+        throw new HttpError(
+          409,
+          "Der Preis hat sich seit Ihrer Übersicht geändert. Bitte prüfen Sie den neuen Gesamtbetrag und senden Sie dann erneut ab.",
+          {
+            priceChanged: true,
+            expectedTotal: input.expectedTotal,
+            actualTotal: totals.total,
+            totals,
+            nightPrices: offer.nightPrices,
+          }
+        );
+      }
+    }
+
     const existingGuest = await tx.orm.hotel.Guest
       .where({ email: input.guest.email })
       .first();
@@ -778,6 +954,74 @@ async function speichereBuchung(input: CreateBookingInput) {
 
     const checkIn = Temporal.PlainDate.from(input.stay.checkIn);
     const checkOut = Temporal.PlainDate.from(input.stay.checkOut);
+
+    // Doppeltes Absenden abfangen: Doppelklick, Browser-Wiederholung oder
+    // ein Netzwerkfehler NACH dem Speichern. Gesucht wird eine Buchung
+    // desselben Gastes fuer denselben Zeitraum aus den letzten Minuten.
+    // Gibt es sie, wird SIE zurueckgegeben, statt eine zweite anzulegen.
+    const seit = nowInstant().subtract({ minutes: DOPPELKLICK_FENSTER_MINUTEN });
+
+    const vorhandene = await tx.orm.hotel.Booking
+      .where({ hotelId: hotel.id, guestId: guest.id })
+      .where((b) => b.checkIn.eq(checkIn))
+      .where((b) => b.checkOut.eq(checkOut))
+      .where((b) => b.createdAt.gte(seit))
+      .orderBy((b) => b.id.desc())
+      .first();
+
+    if (
+      vorhandene &&
+      (BLOCKING_STATUSES as readonly string[]).includes(String(vorhandene.status))
+    ) {
+      const fruehererSnapshot = readPolicySnapshot(vorhandene.cancellationPolicySnapshot);
+
+      return {
+        bookingId: vorhandene.id,
+        bookingNumber: vorhandene.bookingNumber,
+        status: vorhandene.status,
+        checkIn: input.stay.checkIn,
+        checkOut: input.stay.checkOut,
+        nights,
+        adults: input.stay.adults,
+        children: input.stay.children,
+        roomTypeName: roomType.name,
+        bedTypeLabel: BED_TYPE_LABELS[input.bedType],
+        breakfast: input.stay.breakfast,
+        // Beträge aus der gespeicherten Buchung, nicht neu gerechnet.
+        totals: {
+          nights,
+          roomsTotal: String(vorhandene.roomsTotal),
+          discountPercent: 0,
+          discountTotal: String(vorhandene.discountTotal),
+          discountName: null,
+          breakfastTotal: String(vorhandene.extrasTotal),
+          total: String(vorhandene.totalAmount),
+        },
+        nightPrices: offer.nightPrices,
+        cancellation: fruehererSnapshot
+          ? { name: fruehererSnapshot.name, text: fruehererSnapshot.text }
+          : null,
+        currency: vorhandene.currency,
+        paymentMethod: vorhandene.paymentMethod,
+        cardGuarantee: vorhandene.paymentMethod === "CARD_GUARANTEE",
+        guest: {
+          firstName: input.guest.firstName,
+          lastName: input.guest.lastName,
+          email: input.guest.email,
+        },
+        /** Es wurde KEINE zweite Buchung angelegt. */
+        duplicate: true as const,
+      };
+    }
+    // Dieselbe Karte darf nicht an zwei wirksamen Buchungen haengen. Die
+    // Pruefung steht NACH der Wiederholungserkennung: Ein zweites Absenden
+    // derselben Buchung ist oben schon beantwortet und kommt hier nicht an.
+    if (karte) {
+      await assertCardNotReused(karte.methodRef, {
+        blockingStatuses: BLOCKING_STATUSES,
+      });
+    }
+
     const mealPlan = input.stay.breakfast ? "BREAKFAST" : "ROOM_ONLY";
 
     // Die zum Buchungszeitpunkt gültige Stornierungsbedingung wird
@@ -788,6 +1032,45 @@ async function speichereBuchung(input: CreateBookingInput) {
           checkIn: input.stay.checkIn,
           frozenAt: new Date().toISOString(),
         })
+      : null;
+
+    // Wurden die Stornobedingungen zwischen Anzeige und Absenden geaendert,
+    // hat der Gast etwas anderem zugestimmt als jetzt gilt. Dann entsteht
+    // keine Buchung - derselbe Gedanke wie beim Preisvergleich.
+    if (snapshot && input.acceptedPolicyHash) {
+      const jetzt = hashPolicyText(snapshot.text);
+
+      if (input.acceptedPolicyHash.toLowerCase() !== jetzt) {
+        throw new HttpError(
+          409,
+          "Die Stornobedingungen haben sich geändert, seit sie Ihnen angezeigt wurden. Bitte lesen und bestätigen Sie den neuen Stand.",
+          {
+            policyChanged: true,
+            cancellation: { name: snapshot.name, text: snapshot.text },
+            policyHash: jetzt,
+          }
+        );
+      }
+    }
+
+    // Der Nachweis der Zustimmung. Er entsteht aus dem eingefrorenen Text,
+    // nicht aus einer Behauptung des Browsers, und wird mit der Buchung
+    // gemeinsam festgeschrieben - es gibt keine Buchung ohne Nachweis und
+    // keinen Nachweis ohne Buchung.
+    const consent =
+      snapshot &&
+      buildConsentRecord({
+        acceptedTerms: input.acceptedTerms,
+        acceptedPrivacy: input.acceptedPrivacy,
+        policyCode: snapshot.code,
+        snapshotVersion: snapshot.version,
+        shownText: snapshot.text,
+        clientHash: input.acceptedPolicyHash ?? null,
+        at: new Date().toISOString(),
+      });
+
+    const snapshotMitNachweis: PolicySnapshot | null = snapshot
+      ? { ...snapshot, ...(consent ? { consent } : {}) }
       : null;
 
     let booking = null as Awaited<ReturnType<typeof tx.orm.hotel.Booking.create>> | null;
@@ -822,7 +1105,7 @@ async function speichereBuchung(input: CreateBookingInput) {
           paymentCustomerRef: karte?.customerRef ?? null,
           paymentMethodRef: karte?.methodRef ?? null,
           paymentAuthorizedAt: karte ? nowInstant() : null,
-          cancellationPolicySnapshot: snapshot,
+          cancellationPolicySnapshot: snapshotMitNachweis,
           guestMessage: input.guest.message,
         });
       } catch (error) {
@@ -849,12 +1132,16 @@ async function speichereBuchung(input: CreateBookingInput) {
       guestName: `${input.guest.firstName} ${input.guest.lastName}`,
     });
 
-    // Preis je Nacht einfrieren.
+    // Preis je Nacht einfrieren - genau der Preis, der fuer diese Nacht
+    // galt. Aendert der Betrieb spaeter einen Tagespreis, bleibt diese
+    // Buchung davon unberuehrt.
     for (let index = 0; index < nights; index++) {
+      const nacht = offer.nightPrices[index];
+
       await tx.orm.hotel.BookingRoomNight.create({
         bookingRoomId: bookingRoom.id,
         date: checkIn.add({ days: index }),
-        amount: money(offer.pricePerNight),
+        amount: money(nacht ? nacht.amount : offer.pricePerNight),
         occupancySnapshot: persons,
       });
     }
@@ -890,6 +1177,8 @@ async function speichereBuchung(input: CreateBookingInput) {
       bedTypeLabel: BED_TYPE_LABELS[input.bedType],
       breakfast: input.stay.breakfast,
       totals,
+      nightPrices: offer.nightPrices,
+      duplicate: false as const,
       cancellation: snapshot ? { name: snapshot.name, text: snapshot.text } : null,
       currency: hotel.currency,
       paymentMethod: karte ? ("CARD_GUARANTEE" as const) : ("PAY_AT_HOTEL" as const),

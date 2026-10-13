@@ -36,6 +36,13 @@ export async function POST(request: Request) {
       // Nur die Referenz der Kartenhinterlegung. Sie wird serverseitig beim
       // Anbieter nachgeprueft, bevor eine Buchung entsteht.
       cardSetupRef: typeof body.cardSetupRef === "string" ? body.cardSetupRef : null,
+      // Nur zum Vergleich: Weicht der Betrag von der Serverrechnung ab,
+      // entsteht keine Buchung, sondern ein Hinweis mit dem neuen Preis.
+      expectedTotal: typeof body.expectedTotal === "string" ? body.expectedTotal : null,
+      // Streuwert der angezeigten Stornobedingungen. Nur zum Vergleich: Der
+      // Server rechnet seinen eigenen aus dem eingefrorenen Text.
+      acceptedPolicyHash:
+        typeof body.acceptedPolicyHash === "string" ? body.acceptedPolicyHash : null,
     });
 
     return NextResponse.json({ booking }, { status: 201 });

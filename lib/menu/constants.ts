@@ -23,13 +23,8 @@ export function parsePriceInput(value: string) {
 }
 
 // numeric kommt als "16.90" aus der Datenbank zurueck.
-export function formatPrice(value: string) {
-  const n = Number(value);
-
-  if (!Number.isFinite(n)) return value;
-
-  return n.toLocaleString("de-AT", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-}
+// Darstellung liegt zentral in lib/money.ts.
+//
+// formatPrice gibt die Zahl OHNE Waehrungszeichen und ist fuer
+// Eingabefelder gedacht. Fuer die Anzeige ist formatMoney zu verwenden.
+export { formatAmount as formatPrice, formatMoney } from "@/lib/money";

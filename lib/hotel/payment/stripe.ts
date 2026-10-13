@@ -67,6 +67,32 @@ export class StripeProvider implements PaymentProvider {
     return body;
   }
 
+  /**
+   * Wie `call`, liefert aber null, wenn der Anbieter den Datensatz nicht
+   * kennt. Eine erfundene oder abgelaufene Kennung ist kein Stoerfall des
+   * Anbieters, sondern eine ungueltige Eingabe - sie darf keinen 502
+   * ausloesen.
+   */
+  private async callOptional(pfad: string) {
+    const response = await fetch(`${API}${pfad}`, {
+      headers: { Authorization: `Bearer ${this.secretKey}` },
+    });
+
+    const body = await response.json().catch(() => ({}));
+
+    if (response.status === 404 || body?.error?.code === "resource_missing") {
+      return null;
+    }
+
+    if (!response.ok) {
+      const grund = typeof body?.error?.message === "string" ? body.error.message : "unbekannt";
+
+      throw new PaymentError(`Stripe (${pfad}): ${grund.slice(0, 200)}`);
+    }
+
+    return body;
+  }
+
   async startCardSetup(input: { email: string; name: string; reference: string }) {
     const customer = await this.call("/customers", {
       email: input.email,
@@ -74,10 +100,19 @@ export class StripeProvider implements PaymentProvider {
       "metadata[reference]": input.reference,
     });
 
+    // Zahlungsarten verwaltet Stripe inzwischen im Dashboard des Kontos;
+    // `payment_method_types` wird von der aktuellen API-Version abgelehnt.
+    // `allow_redirects: never` haelt Verfahren mit Weiterleitung heraus -
+    // eine Garantie soll den Gast nicht aus der Buchungsstrecke fuehren.
+    //
+    // Dass am Ende wirklich eine KARTE hinterlegt ist, prueft
+    // `confirmCardSetup` selbst. Darauf verlassen wir uns, nicht auf die
+    // Einstellungen im Dashboard.
     const setupIntent = await this.call("/setup_intents", {
       customer: customer.id,
       usage: "off_session",
-      "payment_method_types[0]": "card",
+      "automatic_payment_methods[enabled]": "true",
+      "automatic_payment_methods[allow_redirects]": "never",
       "metadata[reference]": input.reference,
     });
 
@@ -89,14 +124,46 @@ export class StripeProvider implements PaymentProvider {
   }
 
   async confirmCardSetup(setupRef: string) {
-    const setupIntent = await this.call(`/setup_intents/${encodeURIComponent(setupRef)}`);
+    // Nur Kennungen von Stripe annehmen. Ohne das landet jede Eingabe des
+    // Browsers im Pfad der Anfrage.
+    if (!/^seti_[A-Za-z0-9_]+$/.test(setupRef)) return null;
 
+    // Kunde und Zahlungsmethode in einem Aufruf mitladen: Die E-Mail haengt
+    // am Kunden, die Art an der Methode - beides wird hier gebraucht.
+    const setupIntent = await this.callOptional(
+      `/setup_intents/${encodeURIComponent(setupRef)}` +
+        "?expand[]=customer&expand[]=payment_method"
+    );
+
+    if (!setupIntent) return null;
     if (setupIntent.status !== "succeeded") return null;
     if (!setupIntent.customer || !setupIntent.payment_method) return null;
 
+    const kunde = setupIntent.customer as Record<string, unknown> | string;
+    const methode = setupIntent.payment_method as Record<string, unknown> | string;
+
+    const customerRef = typeof kunde === "string" ? kunde : String(kunde.id);
+    const methodRef = typeof methode === "string" ? methode : String(methode.id);
+
+    // Es muss eine KARTE sein. Eine Garantie, die sich nicht spaeter
+    // belasten laesst, waere keine - und was das Dashboard anbietet, liegt
+    // nicht in unserer Hand.
+    const art = typeof methode === "string" ? null : String(methode.type ?? "");
+
+    if (art !== null && art !== "card") return null;
+
+    const customerEmail =
+      typeof kunde === "string" || typeof kunde.email !== "string"
+        ? null
+        : kunde.email;
+
+    const metadata = (setupIntent.metadata as Record<string, string> | undefined) ?? {};
+
     return {
-      customerRef: String(setupIntent.customer),
-      methodRef: String(setupIntent.payment_method),
+      customerRef,
+      methodRef,
+      customerEmail,
+      reference: typeof metadata.reference === "string" ? metadata.reference : null,
     };
   }
 

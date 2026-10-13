@@ -16,6 +16,7 @@ import {
   loadBlocks,
   loadDemands,
   loadPricingContext,
+  loadRatePriceRows,
   quoteOffer,
   todayInHotelTimezone,
 } from "@/lib/hotel/booking-service";
@@ -25,8 +26,19 @@ import {
   EXTERNAL_SOURCES,
   OPERATOR_SOURCES,
 } from "@/lib/hotel/constants";
+import {
+  GUEST_REQUIRED_OPERATOR,
+  cleanGuest,
+  firstError,
+  validateGuest,
+} from "@/lib/hotel/guest-validation";
 import { categoryHasRoom } from "@/lib/hotel/inventory";
 import { fromCents, nightsBetween, toCents } from "@/lib/hotel/pricing";
+import {
+  type NightPrice,
+  resolveNightPrices,
+  stayNights,
+} from "@/lib/hotel/rate-calendar";
 import { db } from "@/prisma/db";
 
 import type { Numeric } from "@prisma/orm-postgres/target/codec-types";
@@ -79,14 +91,6 @@ export type OperatorBookingInput = {
 };
 
 const DATUM = /^\d{4}-\d{2}-\d{2}$/;
-
-function pflicht(wert: string | null | undefined, feld: string) {
-  const text = (wert ?? "").trim();
-
-  if (!text) throw new HttpError(400, `${feld} ist erforderlich.`);
-
-  return text;
-}
 
 export function parseOperatorBooking(raw: Record<string, unknown>): OperatorBookingInput {
   const source = String(raw.source ?? "");
@@ -144,18 +148,32 @@ export function parseOperatorBooking(raw: Record<string, unknown>): OperatorBook
     throw new HttpError(400, "Das Zimmer ist ungültig.");
   }
 
-  const email = String((raw.guest as Record<string, unknown>)?.email ?? "").trim();
-
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
-    throw new HttpError(400, "Bitte eine gültige E-Mail-Adresse angeben.");
-  }
-
+  // Gastangaben mit derselben Pruefung wie die oeffentliche Strecke, nur mit
+  // weniger Pflichtfeldern: Am Telefon liegt oft nur der Name vor.
   const gast = (raw.guest ?? {}) as Record<string, unknown>;
-  const land = String(gast.countryCode ?? "").trim().toUpperCase();
 
-  if (land && !/^[A-Z]{2}$/.test(land)) {
-    throw new HttpError(400, "Das Land muss ein zweistelliger Ländercode sein.");
+  const gastEingabe = {
+    firstName: typeof gast.firstName === "string" ? gast.firstName : null,
+    lastName: typeof gast.lastName === "string" ? gast.lastName : null,
+    email: typeof gast.email === "string" ? gast.email : null,
+    phone: typeof gast.phone === "string" ? gast.phone : null,
+    street: typeof gast.street === "string" ? gast.street : null,
+    postalCode: typeof gast.postalCode === "string" ? gast.postalCode : null,
+    city: typeof gast.city === "string" ? gast.city : null,
+    countryCode: typeof gast.countryCode === "string" ? gast.countryCode : null,
+  };
+
+  const gastFehler = validateGuest(gastEingabe, GUEST_REQUIRED_OPERATOR);
+  const ersterFehler = firstError(gastFehler);
+
+  if (ersterFehler) {
+    throw new HttpError(400, ersterFehler.message, {
+      fieldErrors: gastFehler,
+      field: ersterFehler.field,
+    });
   }
+
+  const sauberer = cleanGuest(gastEingabe);
 
   const betragRaw = String(raw.totalAmount ?? "").trim();
 
@@ -185,14 +203,14 @@ export function parseOperatorBooking(raw: Record<string, unknown>): OperatorBook
     bedType: (bedTypeRaw || null) as BedType | null,
     roomId,
     guest: {
-      firstName: pflicht(String(gast.firstName ?? ""), "Vorname"),
-      lastName: pflicht(String(gast.lastName ?? ""), "Nachname"),
-      email: email ? email.toLowerCase() : null,
-      phone: String(gast.phone ?? "").trim() || null,
-      street: String(gast.street ?? "").trim() || null,
-      postalCode: String(gast.postalCode ?? "").trim() || null,
-      city: String(gast.city ?? "").trim() || null,
-      countryCode: land || null,
+      firstName: sauberer.firstName,
+      lastName: sauberer.lastName,
+      email: sauberer.email || null,
+      phone: sauberer.phone || null,
+      street: sauberer.street || null,
+      postalCode: sauberer.postalCode || null,
+      city: sauberer.city || null,
+      countryCode: sauberer.countryCode || null,
     },
     totalAmount: betragRaw ? betragRaw.replace(",", ".") : null,
     note: String(raw.note ?? "").trim() || null,
@@ -255,31 +273,47 @@ export async function createOperatorBooking(
   }
 
   // Preis: entweder vorgegeben oder aus den hinterlegten Preisen gerechnet -
-  // mit derselben Funktion wie die oeffentliche Buchungsstrecke.
+  // mit derselben Funktion und denselben Tagespreisen wie die oeffentliche
+  // Buchungsstrecke.
   const context = await loadPricingContext(hotel.id);
-  const preis = context.prices.find(
-    (eintrag) => eintrag.roomTypeId === input.roomTypeId && eintrag.occupancy === personen
+
+  const priceRows = await loadRatePriceRows(
+    context.ratePlan.id,
+    input.checkIn,
+    input.checkOut
   );
+
+  const nightPrices = resolveNightPrices({
+    nights: stayNights(input.checkIn, input.checkOut),
+    rows: priceRows,
+    roomTypeId: input.roomTypeId,
+    occupancy: personen,
+  });
 
   let gesamt: string;
   let zimmerAnteil: string;
   let fruehstueckAnteil = "0.00";
   let rabatt = "0.00";
+  // Preis je Nacht fuer die Buchungszeilen. Bei manuell vorgegebenem
+  // Gesamtbetrag gibt es keine Tagespreise - dann wird gleichmaessig
+  // verteilt und die Buchung als manuell gekennzeichnet.
+  let naechtePreise: NightPrice[] | null = nightPrices;
 
   if (input.totalAmount) {
     gesamt = fromCents(toCents(input.totalAmount));
     zimmerAnteil = gesamt;
+    naechtePreise = null;
   } else {
-    if (!preis) {
+    if (!nightPrices) {
       throw new HttpError(
         400,
-        `Für ${roomType.name} und ${personen} Person(en) ist kein Preis hinterlegt. Bitte einen Betrag angeben.`
+        `Für ${roomType.name} und ${personen} Person(en) ist für diesen Zeitraum kein Preis hinterlegt. Bitte einen Betrag angeben.`
       );
     }
 
     const angebot = quoteOffer({
       nights: naechte,
-      pricePerNight: preis.amount,
+      nightPrices,
       persons: personen,
       breakfast: input.breakfast,
       breakfastPrice: context.breakfast ? String(context.breakfast.price) : null,
@@ -373,6 +407,12 @@ export async function createOperatorBooking(
 
     const hinweise: string[] = [];
 
+    // Ein von Hand gesetzter Gesamtbetrag ist nicht aus den Preisen
+    // gerechnet. Das muss an der Buchung erkennbar sein.
+    if (input.totalAmount) {
+      hinweise.push(`Manuell vorgegebener Gesamtbetrag: ${gesamt}.`);
+    }
+
     if (!platz.fits) {
       hinweise.push(
         `Bewusste Überbuchung: Am ${platz.tightestDate} war die Kategorie bereits voll belegt.`
@@ -428,15 +468,22 @@ export async function createOperatorBooking(
       guestName: `${input.guest.firstName} ${input.guest.lastName}`,
     });
 
+    // Preis je Nacht einfrieren: entweder der fuer die Nacht gueltige
+    // Tagespreis oder, bei manuellem Gesamtbetrag, der gleichmaessig
+    // verteilte Anteil (Rest auf die letzte Nacht).
     const proNacht = toCents(zimmerAnteil);
     const grund = Math.floor(proNacht / naechte);
     const rest = proNacht - grund * naechte;
 
     for (let index = 0; index < naechte; index++) {
+      const tagespreis = naechtePreise?.[index]?.amount;
+
       await tx.orm.hotel.BookingRoomNight.create({
         bookingRoomId: bookingRoom.id,
         date: checkIn.add({ days: index }),
-        amount: money(fromCents(index === naechte - 1 ? grund + rest : grund)),
+        amount: money(
+          tagespreis ?? fromCents(index === naechte - 1 ? grund + rest : grund)
+        ),
         occupancySnapshot: personen,
       });
     }

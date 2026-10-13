@@ -4,7 +4,8 @@ import type { ReactNode } from "react";
 
 import Navbar from "@/components/Navbar";
 import { DeliveryButtons } from "@/components/DeliveryLinks";
-import { formatPrice, type MenuKind } from "@/lib/menu/constants";
+import { type MenuKind } from "@/lib/menu/constants";
+import { formatMoney } from "@/lib/money";
 import { db } from "@/prisma/db";
 
 async function getItems(menu: MenuKind) {
@@ -95,7 +96,7 @@ export default async function PublicMenu({
                     </div>
 
                     <p className="shrink-0 font-serif text-xl tabular-nums">
-                      {formatPrice(item.price)} €
+                      {formatMoney(item.price)}
                     </p>
                   </li>
                 ))}

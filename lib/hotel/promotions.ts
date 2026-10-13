@@ -1,3 +1,5 @@
+import { formatMoney } from "@/lib/money";
+
 import { nightsBetween, toCents } from "./pricing";
 
 // Rabattaktionen des Hotels.
@@ -408,7 +410,7 @@ export function describePromotion(promotion: PromotionLike): string[] {
   zeilen.push(
     prozent > 0
       ? `${prozent} % Rabatt auf den Zimmerpreis`
-      : `${promotion.discountAmount ?? "0"} € Rabatt je Aufenthalt`
+      : `${formatMoney(promotion.discountAmount ?? "0")} Rabatt je Aufenthalt`
   );
 
   if (promotion.bookingFrom || promotion.bookingTo) {

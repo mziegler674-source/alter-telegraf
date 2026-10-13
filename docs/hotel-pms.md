@@ -42,8 +42,13 @@ npx prisma migration ref set db <hash-des-markers>
 | `20261011T0719_promotion_requires_code` | `promotion.requiresCode` (Boolean, Standard `false`). Eine Operation, additiv. |
 | `20261011T0758_channel_mapping_and_sync_jobs` | Neue Tabellen `hotel.channelMapping` und `hotel.syncJob`. 15 Operationen, alle additiv. |
 
-Beide Migrationen sind rein additiv: Es wurde keine Spalte entfernt, kein Typ
+Alle Migrationen sind rein additiv: Es wurde keine Spalte entfernt, kein Typ
 geändert und keine Zeile angetastet.
+
+Die Preise je Datum und der Preiskalender brauchten **keine** Migration:
+`RatePrice.date` war im Vertrag schon vorhanden und wurde nur bisher
+nicht genutzt. `prisma db verify` meldet weiterhin „Database marker and schema match
+contract“.
 
 ### Bekannte Eigenheiten der eingesetzten RC-Version
 
@@ -400,6 +405,178 @@ Umsetzung ist die rechtliche Anforderung zu klären; erfunden wird hier nichts.
 
 DSGVO: Gespeichert wird nur, was für Aufenthalt und Rechnung nötig ist. Der
 Zugriff auf die Gästeverwaltung ist der Rolle `admin` vorbehalten.
+
+### Preisdarstellung
+
+Es gibt **eine** Stelle, die aus einem Betrag Text macht: `lib/money.ts`.
+Jede Anzeige im Admin, in der Buchungsstrecke, in den Mails und auf den
+öffentlichen Seiten geht darüber. Eigene `toFixed(2)`-Aufrufe oder ein
+vorangestelltes „€ “ im JSX sind damit abgelöst.
+
+```
+formatMoney("18.8")      18,80 €        formatAmount("18.8")     18,80
+formatMoney(139)         139,00 €       formatMoneyCents(1880)   18,80 €
+formatMoney(null)        –              formatMoneyDelta(-10)    −10,00 €
+formatMoney("1234.5")    1.234,50 €     formatPercent(15)        15 %
+```
+
+Zwei Abweichungen vom naheliegenden Weg, beide bewusst und im Quelltext
+begründet:
+
+1. **Nicht** `Intl.NumberFormat("de-AT", { style: "currency" })`. Die
+   Unicode-Datenbasis stellt für `de-AT` das Eurozeichen **voran**
+   („€ 18,80“). Im Haus steht es nachgestellt – so auf der Karte, in den
+   Mails und in der Buchungsübersicht. Zahl und Zeichen werden deshalb in
+   `lib/money.ts` verbunden, mit geschütztem Leerzeichen, damit der Betrag
+   nicht umbricht.
+2. Gruppiert wird nach `de-DE` („1.234,50“), weil `de-AT` mit einem schmalen
+   Leerzeichen gruppiert („1 234,50“). Die Nachkommastellen sind identisch.
+
+Ein fehlender Betrag ergibt `–`, nicht `0,00 €`: Kein Preis und ein Preis von
+null sind nicht derselbe Sachverhalt. `toNumber` nimmt Punkt **oder** Komma
+als Dezimaltrenner, aber nicht beides gemischt, damit „1.234,56“ nicht
+stillschweigend falsch gelesen wird.
+
+Gerechnet wird weiterhin in ganzen Cent (`lib/hotel/pricing.ts`);
+`lib/money.ts` rundet nicht fachlich und rechnet nicht.
+
+### Preise je Datum
+
+`RatePrice` trug das Feld `date` von Anfang an, genutzt wurde es nicht: Die
+Buchungsstrecke las nur den Grundpreis. Diese Lücke ist geschlossen – ohne
+Schemaänderung und ohne Migration.
+
+- `date = NULL` ist der **Grundpreis** einer Zimmerart je Belegung.
+- `date = 2026-12-24` ist der Preis für **genau diese Nacht**.
+
+**Prioritätsregel:** Für eine Nacht gilt der Preis mit Datum. Fehlt er, gilt
+der Grundpreis. Fehlt auch der, ist die Nacht nicht bepreist und die
+Zimmerart wird **für diesen Aufenthalt nicht angeboten** – sie erscheint
+weder mit Grundpreis noch mit einem geschätzten Wert.
+
+Die Auflösung in `lib/hotel/rate-calendar.ts` baut dazu eine Map aus
+`(Belegung, Datum)`. Die Reihenfolge der Datenbankzeilen kann das Ergebnis
+deshalb nicht beeinflussen; das ist in `scratchpad/test-preise.mjs` mit
+vertauschter Zeilenfolge geprüft.
+
+**Der Abreisetag ist keine Nacht.** `stayNights` liefert für
+20.11. bis 23.11. die drei Nächte 20., 21. und 22. November. Daran hängen die
+Angebotssuche, die Vorschau im Admin und die eingefrorenen
+`BookingRoomNight`-Zeilen.
+
+**Preise und Verfügbarkeit sind getrennt.** Ein Preis für einen Tag sagt
+nichts darüber, ob ein Zimmer frei ist, und eine Sperre ändert keinen Preis.
+Der Preiskalender zeigt die Verfügbarkeit nur **nachrichtlich** an; sie kommt
+unverändert aus `lib/hotel/availability.ts` und `lib/hotel/allocation.ts`.
+Der Preiskalender schreibt ausschließlich `RatePrice`.
+
+### Preiskalender im Admin
+
+`/admin/hotel/preiskalender` zeigt Tag, Woche, 14 Tage oder Monat, je
+Zimmerart und Belegung. Ein Tag nennt seinen Preis und seine Herkunft:
+`=` Grundpreis, `✎` individuell gesetzt.
+
+Geändert wird über fünf Arten, immer für einen Zeitraum und wahlweise
+eingeschränkt auf Wochentage:
+
+| Art | Wirkung |
+| --- | --- |
+| `SET` | setzt einen festen Betrag |
+| `PERCENT` | verändert um einen Prozentsatz |
+| `DELTA` | verändert um einen festen Betrag |
+| `RESET` | löscht die Tageszeile, der Grundpreis gilt wieder |
+
+`PERCENT` und `DELTA` rechnen auf den Preis, der für den jeweiligen Tag
+tatsächlich gilt – nicht auf den Grundpreis. Zehn Prozent auf eine Woche, in
+der zwei Tage schon individuell bepreist sind, ergeben für diese Tage also
+zehn Prozent auf ihren eigenen Wert.
+
+**Vor dem Speichern** steht immer eine Vorschau: Sie nennt jeden betroffenen
+Tag mit vorher, nachher und Veränderung, dazu eine Zusammenfassung. Erst ein
+zweiter Klick schreibt. Vorschau und Speichern teilen dieselbe Prüfung
+(`readChange`) und denselben Planer (`planPriceChange`) – die Vorschau kann
+vom Ergebnis deshalb nicht abweichen.
+
+Grenzen, die der Server erzwingt:
+
+- Kein Tag außerhalb des angegebenen Zeitraums wird angefasst.
+- Kein Preis wird negativ.
+- Ein Prozentsatz ohne Ausgangspreis ist ein Fehler, keine stille Null.
+- `from` nach `to` wird abgewiesen.
+- Geschrieben wird in einer Transaktion unter der Hotelzeilensperre, wie
+  jede andere schreibende Hoteloperation.
+
+### Serverberechnung des Aufenthalts
+
+Der Preis entsteht ausschließlich auf dem Server. Der Ablauf, in dieser
+Folge:
+
+1. `loadRatePriceRows` lädt Grundpreise und die Tageszeilen des Zeitraums.
+2. `resolveNightPrices` löst je Nacht den geltenden Preis auf.
+3. `quoteOffer` bildet Zimmerpreis, Rabatt und Frühstück (Reihenfolge wie
+   unter „Rabattaktionen“ beschrieben).
+4. `createBooking` friert den tatsächlichen Betrag **je Nacht** in
+   `BookingRoomNight` ein.
+
+Beträge aus dem Browser werden nie übernommen. Die Buchungsstrecke schickt
+den in der Übersicht gezeigten Gesamtbetrag dennoch als `expectedTotal` mit –
+nicht als Preisangabe, sondern als Behauptung über den Stand der Anzeige.
+Weicht er ab, entsteht **keine** Buchung: Der Server antwortet mit `409`, dem
+neuen Betrag und den Preisen je Nacht, und die Buchungsstrecke zeigt den
+Unterschied, bevor der Gast erneut bestätigt.
+
+Eine Zimmerart mit unterschiedlichen Nachtpreisen wird als Spanne angezeigt
+(`priceVaries`), und die Übersicht listet jede Nacht einzeln auf.
+
+### Gastdaten prüfen – eine Stelle für beide Seiten
+
+`lib/hotel/guest-validation.ts` ist rein, kennt keine Datenbank und läuft
+deshalb unverändert im Browser **und** auf dem Server. Die Buchungsstrecke
+nutzt sie für die Rückmeldung während der Eingabe, `parseGuest` in
+`lib/hotel/booking-service.ts` für die verbindliche Prüfung. Ein zweites
+Regelwerk gibt es nicht; eine Lücke im Browser kann daher nichts
+durchlassen.
+
+- Namen dürfen Buchstaben aller Schriften, Bindestrich und Apostroph
+  enthalten – „O'Brien“, „Nguyễn“, „Müller-Lüdenscheidt“. Ziffern nicht.
+- Telefonnummern werden normalisiert: `00` wird zu `+`, eine nationale
+  führende `0` wird für AT, DE, CH, IT und LI durch die Landesvorwahl
+  ersetzt. `0664 1234567` ergibt `+436641234567`. Gespeichert wird die
+  normalisierte Form.
+- Postleitzahlen werden nur dort gegen ein Muster geprüft, wo das Muster
+  eindeutig ist (`lib/hotel/countries.ts`). Sonst gilt nur eine
+  Längenprüfung. Für Länder ohne Postleitzahl – etwa die Vereinigten
+  Arabischen Emirate oder Hongkong – ist das Feld nicht erforderlich.
+  Führende Nullen bleiben erhalten, das Feld ist Text.
+- Das Land kommt aus einer Liste, nicht aus einem Freitextfeld.
+
+Der Server antwortet bei fehlerhaften Angaben mit `400`, einer Meldung je
+Feld (`details.fieldErrors`) und dem ersten betroffenen Feld
+(`details.field`). Die Buchungsstrecke setzt den Fokus darauf und zeigt eine
+Fehlerübersicht; jedes Feld trägt `aria-invalid` und eine über
+`aria-describedby` verbundene Meldung.
+
+### Buchungssicherheit
+
+Vier Dinge sichern das Absenden ab:
+
+1. **Erneute Prüfung.** Verfügbarkeit, Zuordnung, Aktion und Preis werden
+   beim Anlegen vollständig neu berechnet – nicht aus der Suche übernommen.
+2. **Keine Doppelbuchung.** Die Verfügbarkeitsprüfung und das Schreiben
+   laufen in einer Transaktion unter der Hotelzeilensperre. Zwei
+   gleichzeitige Anfragen auf das letzte Zimmer können sich nicht
+   überholen.
+3. **Doppelklick.** Trifft innerhalb von zehn Minuten dieselbe Buchung ein
+   (gleicher Gast, Zeitraum, Zimmerart), wird keine zweite angelegt. Die
+   bestehende wird zurückgegeben, gekennzeichnet mit `duplicate`, und die
+   Bestätigungsseite sagt das auch.
+4. **Ehrliche Bestätigung.** Die Seite behauptet nur, was geschehen ist. Ist
+   der Mailversand gescheitert, steht dort, dass die Buchung gilt, die
+   Bestätigung aber nicht verschickt werden konnte – nicht „E-Mail
+   unterwegs“.
+
+Ein Fehler beim Mailversand lässt die Buchung unberührt; das war schon für
+den Mailservice festgelegt und gilt weiter.
 
 ## Seed
 

@@ -20,7 +20,8 @@ import {
   requireHotel,
   requireHotelAdmin,
 } from "@/lib/hotel/admin-api";
-import { loadPromotions, quoteOffer } from "@/lib/hotel/booking-service";
+import { loadPromotions, loadRatePriceRows, quoteOffer } from "@/lib/hotel/booking-service";
+import { resolveNightPrices, stayNights } from "@/lib/hotel/rate-calendar";
 import { BREAKFAST_SERVICE_CODE, nightsBetween } from "@/lib/hotel/pricing";
 import {
   PROMOTION_CHANNELS,
@@ -446,12 +447,10 @@ async function preview(hotelId: number, timezone: string, body: Body) {
 
   if (!ratePlan) throw new HttpError(409, "Es ist kein Rate Plan hinterlegt.");
 
-  const [prices, breakfastItem, promotions, roomTypes] = await Promise.all([
-    db.orm.hotel.RatePrice
-      .where({ ratePlanId: ratePlan.id })
-      .where((p) => p.date.isNull())
-      .select("roomTypeId", "occupancy", "amount")
-      .all(),
+  const [priceRows, breakfastItem, promotions, roomTypes] = await Promise.all([
+    // Grundpreise UND Tagespreise des Zeitraums - dieselbe Quelle wie die
+    // oeffentliche Buchungsstrecke.
+    loadRatePriceRows(ratePlan.id, checkIn, checkOut),
     db.orm.hotel.ServiceItem.first({ hotelId, code: BREAKFAST_SERVICE_CODE }),
     loadPromotions(hotelId),
     db.orm.hotel.RoomType
@@ -463,17 +462,22 @@ async function preview(hotelId: number, timezone: string, body: Body) {
 
   const breakfastPrice = breakfastItem ? String(breakfastItem.price) : null;
 
+  const naechte = stayNights(checkIn, checkOut);
+
   const zeilen = roomTypes
     .map((roomType) => {
-      const preis = prices.find(
-        (entry) => entry.roomTypeId === roomType.id && entry.occupancy === persons
-      );
+      const nightPrices = resolveNightPrices({
+        nights: naechte,
+        rows: priceRows,
+        roomTypeId: roomType.id,
+        occupancy: persons,
+      });
 
-      if (!preis) return null;
+      if (!nightPrices) return null;
 
       const angebot = quoteOffer({
         nights,
-        pricePerNight: String(preis.amount),
+        nightPrices,
         persons,
         breakfast,
         breakfastPrice,
@@ -489,7 +493,8 @@ async function preview(hotelId: number, timezone: string, body: Body) {
       return {
         roomTypeId: roomType.id,
         roomTypeName: roomType.name,
-        pricePerNight: String(preis.amount),
+        pricePerNight: nightPrices[0].amount,
+        nightPrices,
         totals: angebot.totals,
         promotion: angebot.discount,
         promotionCode: angebot.code,

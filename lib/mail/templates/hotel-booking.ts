@@ -1,4 +1,4 @@
-import { formatEuro } from "@/lib/hotel/pricing";
+import { formatMoney } from "@/lib/money";
 
 import { type MailSection, type RenderedMail, formatDateLong, renderMail } from "../layout";
 
@@ -47,8 +47,13 @@ export type HotelBookingMailData = {
   guestMessage: string | null;
 };
 
+// Darstellung zentral aus lib/money.ts: einheitlich „330,00 €“.
+// Der Waehrungscode der Buchung wird nur dann zusaetzlich genannt, wenn er
+// nicht Euro ist - das Haus rechnet in Euro.
 function geld(amount: string, currency: string) {
-  return `${formatEuro(amount)} ${currency}`;
+  const text = formatMoney(amount);
+
+  return currency && currency !== "EUR" ? `${text} (${currency})` : text;
 }
 
 function naechte(count: number) {

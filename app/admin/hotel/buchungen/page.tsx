@@ -16,7 +16,7 @@ import {
 import { BED_TYPES, BED_TYPE_LABELS } from "@/lib/hotel/availability";
 import { type ApiResult, apiRequest } from "@/lib/hotel/client";
 import { BOOKING_SOURCE_LABELS, OPERATOR_SOURCES } from "@/lib/hotel/constants";
-import { formatEuro } from "@/lib/hotel/pricing";
+import { formatMoney } from "@/lib/money";
 
 type BookingRoom = {
   id: number;
@@ -345,7 +345,7 @@ export default function BookingsAdminPage() {
     const neu = result.data.booking;
 
     setSuccess(
-      `Buchung ${neu.bookingNumber} erfasst (${formatEuro(neu.totalAmount)} €).${
+      `Buchung ${neu.bookingNumber} erfasst (${formatMoney(neu.totalAmount)}).${
         neu.warning ? ` ${neu.warning}` : ""
       }`
     );
@@ -656,7 +656,7 @@ export default function BookingsAdminPage() {
                         </Badge>
                       </td>
                       <td className="px-4 py-4 text-right font-semibold">
-                        {formatEuro(booking.totalAmount)} €
+                        {formatMoney(booking.totalAmount)}
                       </td>
                       <td className="px-4 py-4 text-right">
                         <Button
@@ -688,10 +688,10 @@ export default function BookingsAdminPage() {
                           ["Telefon", booking.guest.phone],
                           ["Quelle", booking.source],
                           ["Zahlung", booking.paymentMethod === "PAY_AT_HOTEL" ? "vor Ort im Hotel" : booking.paymentMethod],
-                          ["Zimmer", `${formatEuro(booking.roomsTotal)} €`],
-                          ["Rabatt", `− ${formatEuro(booking.discountTotal)} €`],
-                          ["Frühstück", `${formatEuro(booking.extrasTotal)} €`],
-                          ["Gesamt", `${formatEuro(booking.totalAmount)} €`],
+                          ["Zimmer", `${formatMoney(booking.roomsTotal)}`],
+                          ["Rabatt", `− ${formatMoney(booking.discountTotal)}`],
+                          ["Frühstück", `${formatMoney(booking.extrasTotal)}`],
+                          ["Gesamt", `${formatMoney(booking.totalAmount)}`],
                         ].map(([label, value]) => (
                           <div key={label} className="flex justify-between gap-6">
                             <dt className="text-[#756f64]">{label}</dt>
@@ -773,7 +773,7 @@ export default function BookingsAdminPage() {
                                 Stornierung heute:{" "}
                                 {booking.cancellationToday.free
                                   ? "kostenfrei"
-                                  : `${formatEuro(booking.cancellationToday.amount)} €`}
+                                  : `${formatMoney(booking.cancellationToday.amount)}`}
                               </p>
                             )}
                           </>

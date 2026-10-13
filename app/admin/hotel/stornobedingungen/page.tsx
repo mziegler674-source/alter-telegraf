@@ -20,6 +20,7 @@ import {
   type CancellationBasis,
 } from "@/lib/hotel/cancellation";
 import { type ApiResult, apiRequest, toFormValue } from "@/lib/hotel/client";
+import { formatMoney } from "@/lib/money";
 
 type Rule = {
   id: number;
@@ -249,7 +250,7 @@ export default function CancellationPage() {
                         <td className="px-4 py-3">{BASIS_LABELS[rule.basis]}</td>
                         <td className="px-4 py-3">
                           {rule.basis === "FIXED_AMOUNT"
-                            ? `${Number(rule.feeAmount ?? 0).toFixed(2)} €`
+                            ? formatMoney(rule.feeAmount ?? 0)
                             : rule.basis === "FIRST_NIGHT"
                               ? "erste Nacht"
                               : `${Number(rule.feePercent ?? 0)} %`}

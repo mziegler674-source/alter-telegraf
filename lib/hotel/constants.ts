@@ -131,6 +131,7 @@ export const HOTEL_NAV = [
   { href: "/admin/hotel/zimmer", label: "Zimmer", ready: true },
   { href: "/admin/hotel/ausstattung", label: "Ausstattung", ready: true },
   { href: "/admin/hotel/preise", label: "Preise", ready: true },
+  { href: "/admin/hotel/preiskalender", label: "Preiskalender", ready: true },
   { href: "/admin/hotel/stornobedingungen", label: "Stornobedingungen", ready: true },
   { href: "/admin/hotel/promotions", label: "Promotions", ready: true },
   { href: "/admin/hotel/buchungen", label: "Buchungen", ready: true },

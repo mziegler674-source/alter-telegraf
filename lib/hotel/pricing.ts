@@ -45,11 +45,21 @@ export function fromCents(cents: number): string {
   return `${sign}${Math.floor(absolute / 100)}.${String(absolute % 100).padStart(2, "0")}`;
 }
 
+// Darstellung von Geldbetraegen liegt zentral in lib/money.ts. Hier nur
+// weitergereicht, damit bestehende Importe gueltig bleiben.
+export { formatAmount, formatMoney, formatMoneyCents } from "@/lib/money";
+
+import { formatAmount as formatAmountIntern } from "@/lib/money";
+
+/**
+ * Betrag ohne Waehrungszeichen.
+ *
+ * @deprecated Fuer Anzeige formatMoney verwenden (mit „€“), fuer
+ * Eingabefelder formatAmount. Bleibt als Alias, damit bestehende Aufrufe
+ * nicht brechen.
+ */
 export function formatEuro(decimal: string): string {
-  return Number(decimal).toLocaleString("de-AT", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  return formatAmountIntern(decimal);
 }
 
 // Anzahl der Naechte zwischen zwei Datumsangaben im Format YYYY-MM-DD.
@@ -86,8 +96,16 @@ export type StayDiscount = {
 
 export type StayInput = {
   nights: number;
-  /** Preis pro Nacht fuer die gewaehlte Belegung, als Dezimalzahl. */
-  pricePerNight: string;
+  /**
+   * Preis pro Nacht fuer die gewaehlte Belegung, als Dezimalzahl. Nur noch
+   * fuer gleichbleibende Preise; nightPrices hat Vorrang.
+   */
+  pricePerNight?: string;
+  /**
+   * Preis je Nacht. Entsteht in lib/hotel/rate-calendar.ts aus Grundpreis
+   * und hinterlegten Tagespreisen und hat Vorrang vor pricePerNight.
+   */
+  nightPrices?: { amount: string }[];
   /** Personen, die Fruehstueck nehmen. */
   breakfastPersons: number;
   breakfastPricePerPersonNight: string;
@@ -116,7 +134,18 @@ export function calculateStay(input: StayInput): StayTotals {
     throw new Error("Der Aufenthalt muss mindestens eine Nacht umfassen.");
   }
 
-  const roomsTotalCents = toCents(input.pricePerNight) * input.nights;
+  // Zimmerpreis: Summe der Naechte, wenn sie einzeln vorliegen - sonst der
+  // gleichbleibende Preis mal Naechte.
+  const roomsTotalCents =
+    input.nightPrices && input.nightPrices.length > 0
+      ? input.nightPrices.reduce((summe, nacht) => summe + toCents(nacht.amount), 0)
+      : input.pricePerNight !== undefined
+        ? toCents(input.pricePerNight) * input.nights
+        : null;
+
+  if (roomsTotalCents === null) {
+    throw new Error("Für den Aufenthalt liegt kein Zimmerpreis vor.");
+  }
 
   // Mehr als den Zimmerpreis kann kein Rabatt ausmachen.
   const discountTotalCents = Math.max(

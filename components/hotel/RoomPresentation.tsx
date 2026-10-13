@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { formatMoney } from "@/lib/money";
 
 // Zimmerdarstellung fuer Gaeste. Das Zimmer ist ein Produkt: grosses Foto,
 // klare Eckdaten, Ausstattung, Preis. Verwendet auf der Hotelseite und in der
@@ -33,8 +34,7 @@ export type ShowcaseRoom = {
   roomsAvailable?: number;
 };
 
-const euro = (value: string) =>
-  Number(value).toLocaleString("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 
 const personLabel = (count: number) => `${count} ${count === 1 ? "Person" : "Personen"}`;
 
@@ -209,7 +209,7 @@ function Price({ room }: { room: ShowcaseRoom }) {
   return (
     <p className="font-serif text-2xl text-[#211f1b]">
       {room.priceIsFrom && <span className="mr-1 text-base text-[#756f64]">ab</span>}
-      {euro(room.price)} &euro;
+      {formatMoney(room.price)}
       <span className="ml-1 font-sans text-sm text-[#756f64]">/ Nacht</span>
     </p>
   );

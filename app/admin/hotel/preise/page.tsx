@@ -13,7 +13,7 @@ import {
   inputClass,
 } from "@/components/hotel-admin/ui";
 import { type ApiResult, apiRequest } from "@/lib/hotel/client";
-import { formatEuro } from "@/lib/hotel/pricing";
+import { formatAmount } from "@/lib/money";
 
 type RoomType = {
   id: number;
@@ -53,10 +53,10 @@ export default function HotelPricesPage() {
       setPrices(
         result.data.prices.map((price) => ({
           ...price,
-          amount: formatEuro(price.amount),
+          amount: formatAmount(price.amount),
         }))
       );
-      setBreakfast(formatEuro(result.data.breakfastPrice));
+      setBreakfast(formatAmount(result.data.breakfastPrice));
       setTiers(
         result.data.discountTiers.map((tier) => ({
           minNights: String(tier.minNights),
